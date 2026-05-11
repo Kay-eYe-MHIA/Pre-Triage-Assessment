@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>i-CEMAS Pre-Triage · JKN Melaka</title>
+<title>Pre-Triage Assessment · ED HKL</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -35,25 +35,25 @@ const { useState, useEffect } = React;
 // ── CHANGE THIS PIN before going live ──
 const STAFF_PIN = "1234";
 const CASE_KEY  = "icemas_cases_v1";
-const GS_URL    = "https://script.google.com/macros/s/AKfycbwDT0zUXO-jDRd4sjWl6fR40_lPRRtdNNXBU_ihIilt57-9in41ve4Fb89UR27661NDSQ/exec";
+const GS_URL    = "https://script.google.com/macros/s/AKfycbxqNTY_Syya6YeJ6wx92NrqJRhKa2hFiMdgtgnz_O6EoSg79cHsqjILSjF4a_4vYQwt1w/exec";
 
 // ── Translations ───────────────────────────────────────────────────────────────
 const T = {
 en:{
-  tag:"i-CEMAS · JKN Melaka", title:"Pre-Triage Assessment System",
+  tag:"ED HKL · Hospital Kuala Lumpur", title:"Pre-Triage Assessment System",
   exit:"✕ Exit", back:"← Back", confirm:"Confirm & Continue →",
   stepLbl:"STEP", of:"/",
   wTitle:"Quick Health Assessment",
-  wSub:"Based on the i-CEMAS triage system · Hospital Melaka, JKN Melaka.",
-  wDesc:"Complete privacy consent and patient registration before clinical questions.",
-  f1l:"PDPA Consent",f1s:"privacy protected",f2l:"iCEMAS + Extended",f2s:"clinical questions",
+  wSub:"Pre-Triage Assessment for Stable Patients · Emergency Department, Hospital Kuala Lumpur.",
+  wDesc:"Complete your PDPA consent and registration. Our system will determine if you need ED care or can be safely seen at a Klinik Kesihatan.",
+  f1l:"PDPA Consent",f1s:"privacy protected",f2l:"Clinical Questions",f2s:"clinical questions",
   f3l:"Analytics ready",f3s:"case tracking",f4l:"Instant cert",f4s:"or queue number",
   startBtn:"Start Assessment →", emergency:"Life-threatening? Go directly to ED or call 999",
   staffBtn:"🔐 Staff Dashboard",
   pdpaTitle:"Privacy Consent (PDPA 2010)", pdpaSub:"Please read carefully before proceeding",
   pdpaPoints:[
     "Your personal data (name, IC, contact, health info) is collected under the Personal Data Protection Act 2010 (Act 709).",
-    "Used solely for clinical triage, care redirection, and follow-up by authorised JKN Melaka / Hospital Melaka staff.",
+    "Used solely for clinical triage, care redirection, and follow-up by authorised Hospital Kuala Lumpur / KKM staff.",
     "Your data will NOT be shared with third parties without consent, except as required by law.",
     "Retained per MOH data retention policy.",
     "You have the right to access and correct your data — contact the hospital Data Protection Officer.",
@@ -91,7 +91,7 @@ en:{
   pinTitle:"Staff Access",pinSub:"Enter staff PIN to access dashboard",
   pinLbl:"PIN",pinPH:"Enter PIN",pinBtn:"Access Dashboard →",pinErr:"Incorrect PIN. Please try again.",
   logout:"Logout",
-  dashTitle:"Case Analytics Dashboard",
+  dashTitle:"ED HKL Case Analytics Dashboard",
   dTotal:"Total Cases",dED:"ED Cases",dKK:"KK Redirected",
   dToday:"Today",dAll:"All Time",
   dExport:"Export CSV",dClear:"Clear All Data",dConfirm:"Confirm Delete",dNoData:"No cases recorded yet.",
@@ -99,20 +99,20 @@ en:{
   secs:{Service:"Service","Patient Info":"Patient Info","Medical History":"Medical History","Clinical Assessment":"Clinical Assessment","Additional":"Additional Assessment"},
 },
 ms:{
-  tag:"i-CEMAS · JKN Melaka", title:"Sistem Penilaian Pra-Triaj",
+  tag:"ED HKL · Hospital Kuala Lumpur", title:"Sistem Penilaian Pra-Triaj",
   exit:"✕ Keluar", back:"← Kembali", confirm:"Sahkan & Teruskan →",
   stepLbl:"LANGKAH", of:"/",
   wTitle:"Penilaian Kesihatan Ringkas",
-  wSub:"Berdasarkan sistem triaj i-CEMAS · Hospital Melaka, JKN Melaka.",
-  wDesc:"Lengkapkan persetujuan privasi dan pendaftaran sebelum soalan klinikal.",
-  f1l:"Persetujuan PDPA",f1s:"privasi dilindungi",f2l:"iCEMAS + Lanjutan",f2s:"soalan klinikal",
+  wSub:"Penilaian Pra-Triaj untuk Pesakit Stabil · Jabatan Kecemasan, Hospital Kuala Lumpur.",
+  wDesc:"Lengkapkan persetujuan PDPA dan pendaftaran. Sistem kami akan menentukan sama ada anda memerlukan rawatan JK atau boleh ke Klinik Kesihatan.",
+  f1l:"Persetujuan PDPA",f1s:"privasi dilindungi",f2l:"Soalan Klinikal",f2s:"soalan klinikal",
   f3l:"Siap analitik",f3s:"pengesanan kes",f4l:"Sijil segera",f4s:"atau nombor giliran",
   startBtn:"Mula Penilaian →", emergency:"Kecemasan? Terus ke JK atau hubungi 999",
   staffBtn:"🔐 Papan Pemuka Kakitangan",
   pdpaTitle:"Persetujuan Privasi (PDPA 2010)", pdpaSub:"Sila baca dengan teliti sebelum meneruskan",
   pdpaPoints:[
     "Data peribadi anda (nama, IC, hubungan, maklumat kesihatan) dikumpul di bawah Akta Perlindungan Data Peribadi 2010 (Akta 709).",
-    "Digunakan semata-mata untuk triaj klinikal dan tindakan susulan oleh kakitangan JKN Melaka / Hospital Melaka yang diberi kuasa.",
+    "Digunakan semata-mata untuk triaj klinikal dan tindakan susulan oleh kakitangan Hospital Kuala Lumpur / KKM yang diberi kuasa.",
     "Data anda TIDAK akan dikongsi dengan pihak ketiga tanpa persetujuan, kecuali dikehendaki undang-undang.",
     "Disimpan mengikut polisi penyimpanan data KKM.",
     "Anda berhak mengakses dan membetulkan data — hubungi Pegawai Perlindungan Data hospital.",
@@ -150,7 +150,7 @@ ms:{
   pinTitle:"Akses Kakitangan",pinSub:"Masukkan PIN untuk akses papan pemuka",
   pinLbl:"PIN",pinPH:"Masukkan PIN",pinBtn:"Akses Papan Pemuka →",pinErr:"PIN tidak betul. Sila cuba lagi.",
   logout:"Log Keluar",
-  dashTitle:"Papan Pemuka Analitik Kes",
+  dashTitle:"Papan Pemuka Analitik Kes ED HKL",
   dTotal:"Jumlah Kes",dED:"Kes JK",dKK:"Dialih ke KK",
   dToday:"Hari Ini",dAll:"Semua Masa",
   dExport:"Eksport CSV",dClear:"Padam Semua Data",dConfirm:"Sahkan Padam",dNoData:"Tiada kes direkodkan.",
@@ -333,7 +333,7 @@ const dlCert = (pt, ans, ref, steps, lang) => {
   const t=T[lang]; const now=new Date();
   const lbl={service_type:lang==="en"?"Service":"Perkhidmatan",conscious:lang==="en"?"Consciousness":"Kesedaran",breathing:lang==="en"?"Breathing":"Pernafasan",chest_pain:lang==="en"?"Chest Pain":"Sakit Dada",chest_duration:lang==="en"?"Chest Pain Duration":"Tempoh Sakit Dada",seizure:lang==="en"?"Seizures":"Sawan",abdo_pain:lang==="en"?"Abdominal Pain":"Sakit Perut",abdo_duration:lang==="en"?"Abdo Duration":"Tempoh Sakit Perut",injury:lang==="en"?"Injury":"Kecederaan",bleeding:lang==="en"?"Bleeding":"Pendarahan",pregnant:lang==="en"?"Pregnant":"Hamil",preg_week:lang==="en"?"Pregnancy Status":"Status Kehamilan",fever:lang==="en"?"Fever":"Demam",vomiting:lang==="en"?"Vomiting":"Muntah",pain:lang==="en"?"Pain Score":"Skor Kesakitan",mobility:lang==="en"?"Mobility":"Mobiliti",comorbid:lang==="en"?"Conditions":"Penyakit",comorbid_list:lang==="en"?"Conditions Detail":"Butiran Penyakit",allergy:lang==="en"?"Drug Allergy":"Alahan Ubat",duration:lang==="en"?"Symptom Duration":"Tempoh Gejala",prior:lang==="en"?"Prior Visit":"Lawatan Terdahulu"};
   const lines=steps.filter(s=>ans[s.id]!==undefined).map(s=>{const v=ans[s.id];if(Array.isArray(v))return`${lbl[s.id]||s.id}: ${s.opts.filter(o=>v.includes(o.val)).map(o=>o.lbl).join(", ")}`;const o=s.opts?.find(o=>o.val===v);return`${lbl[s.id]||s.id}: ${o?o.lbl:v}`;}).join("\n");
-  const c=`\n══════════════════════════════════════════════\n  ${lang==="en"?"KLINIK KESIHATAN REFERRAL CERTIFICATE":"SIJIL RUJUKAN KLINIK KESIHATAN"}\n  i-CEMAS Pre-Triage System · JKN Melaka\n══════════════════════════════════════════════\n${lang==="en"?"Ref No":"No. Rujukan"}     : ${ref}\n${lang==="en"?"Date":"Tarikh"}        : ${fmtDate(now)}\n${lang==="en"?"Time":"Masa"}         : ${fmtTime(now)}\n\n${lang==="en"?"PATIENT DETAILS":"BUTIRAN PESAKIT"}\n──────────────────────────────────────────────\n${lang==="en"?"Name":"Nama"}         : ${pt.name||"-"}\n${lang==="en"?"IC Number":"No. IC"}    : ${pt.ic||"-"}\n${lang==="en"?"Contact":"Telefon"}     : ${pt.phone||"-"}\n${lang==="en"?"DOB":"T/Lahir"}        : ${pt.dob||"-"}\n${lang==="en"?"Gender":"Jantina"}      : ${pt.gender||"-"}\n${lang==="en"?"Area":"Kawasan"}        : ${pt.address||"-"}\nPDPA          : ${lang==="en"?"Consent Obtained":"Persetujuan Diperoleh"}\n\n${lang==="en"?"OUTCOME":"HASIL"}        : ${lang==="en"?"STABLE — Suitable for Klinik Kesihatan":"STABIL — Sesuai untuk Klinik Kesihatan"}\n──────────────────────────────────────────────\n${lang==="en"?"ASSESSMENT SUMMARY":"RINGKASAN PENILAIAN"}\n──────────────────────────────────────────────\n${lines}\n──────────────────────────────────────────────\n${lang==="en"?"RECOMMENDED ACTION":"TINDAKAN YANG DISYORKAN"}\n──────────────────────────────────────────────\n${lang==="en"?"Proceed to nearest Klinik Kesihatan (KK).\nPresent this certificate at registration.\nValid today only. Subsidised rate applies.":"Pergi ke Klinik Kesihatan (KK) terdekat.\nTunjukkan sijil ini di kaunter pendaftaran.\nSah hari ini sahaja. Kadar bersubsidi terpakai."}\n──────────────────────────────────────────────\n${lang==="en"?"RETURN TO ED IMMEDIATELY IF:":"KEMBALI KE JK DENGAN SEGERA JIKA:"}\n${lang==="en"?"Breathing difficulty, Chest pain, Unconscious,\nUncontrolled bleeding, Seizure, Rapid worsening.\nEmergency: Call 999":"Sukar bernafas, Sakit dada, Pengsan,\nPendarahan tidak terkawal, Sawan, Keadaan semakin teruk.\nKecemasan: Hubungi 999"}\n══════════════════════════════════════════════\nGenerated by i-CEMAS | icemas.hmelaka.moh.gov.my\n══════════════════════════════════════════════`;
+  const c=`\n══════════════════════════════════════════════\n  ${lang==="en"?"KLINIK KESIHATAN REFERRAL CERTIFICATE":"SIJIL RUJUKAN KLINIK KESIHATAN"}\n  ED HKL Pre-Triage System · Hospital Kuala Lumpur\n  (Adapted from i-CEMAS, credit: JKN Melaka)\n══════════════════════════════════════════════\n${lang==="en"?"Ref No":"No. Rujukan"}     : ${ref}\n${lang==="en"?"Date":"Tarikh"}        : ${fmtDate(now)}\n${lang==="en"?"Time":"Masa"}         : ${fmtTime(now)}\n\n${lang==="en"?"PATIENT DETAILS":"BUTIRAN PESAKIT"}\n──────────────────────────────────────────────\n${lang==="en"?"Name":"Nama"}         : ${pt.name||"-"}\n${lang==="en"?"IC Number":"No. IC"}    : ${pt.ic||"-"}\n${lang==="en"?"Contact":"Telefon"}     : ${pt.phone||"-"}\n${lang==="en"?"DOB":"T/Lahir"}        : ${pt.dob||"-"}\n${lang==="en"?"Gender":"Jantina"}      : ${pt.gender||"-"}\n${lang==="en"?"Area":"Kawasan"}        : ${pt.address||"-"}\nPDPA          : ${lang==="en"?"Consent Obtained":"Persetujuan Diperoleh"}\n\n${lang==="en"?"OUTCOME":"HASIL"}        : ${lang==="en"?"STABLE — Suitable for Klinik Kesihatan":"STABIL — Sesuai untuk Klinik Kesihatan"}\n──────────────────────────────────────────────\n${lang==="en"?"ASSESSMENT SUMMARY":"RINGKASAN PENILAIAN"}\n──────────────────────────────────────────────\n${lines}\n──────────────────────────────────────────────\n${lang==="en"?"RECOMMENDED ACTION":"TINDAKAN YANG DISYORKAN"}\n──────────────────────────────────────────────\n${lang==="en"?"Proceed to nearest Klinik Kesihatan (KK).\nPresent this certificate at registration.\nValid today only. Subsidised rate applies.":"Pergi ke Klinik Kesihatan (KK) terdekat.\nTunjukkan sijil ini di kaunter pendaftaran.\nSah hari ini sahaja. Kadar bersubsidi terpakai."}\n──────────────────────────────────────────────\n${lang==="en"?"RETURN TO ED IMMEDIATELY IF:":"KEMBALI KE JK DENGAN SEGERA JIKA:"}\n${lang==="en"?"Breathing difficulty, Chest pain, Unconscious,\nUncontrolled bleeding, Seizure, Rapid worsening.\nEmergency: Call 999":"Sukar bernafas, Sakit dada, Pengsan,\nPendarahan tidak terkawal, Sawan, Keadaan semakin teruk.\nKecemasan: Hubungi 999"}\n══════════════════════════════════════════════\nGenerated by ED HKL Pre-Triage System | Hospital Kuala Lumpur\n  Adapted from i-CEMAS (credit: JKN Melaka / KKM)\n══════════════════════════════════════════════`;
   const blob=new Blob([c],{type:"text/plain"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`iCEMAS_KK_${ref}.txt`;a.click();URL.revokeObjectURL(url);
 };
 
@@ -428,7 +428,16 @@ function App(){
       fever:ans.fever||"-",vomiting:ans.vomiting||"-",pregnancy:ans.pregnant||"-",
       ...extra};
     addCase(caseData);
-    fetch(GS_URL,{method:"POST",mode:"no-cors",body:JSON.stringify({...caseData,timestamp:caseData.time})}).catch(()=>{});
+    // Submit to Google Sheets via form POST (works with no-cors)
+    const form=document.createElement("form");
+    form.method="POST"; form.action=GS_URL; form.target="gs_iframe"; form.style.display="none";
+    const inp=document.createElement("input"); inp.type="hidden"; inp.name="data";
+    inp.value=JSON.stringify({...caseData,timestamp:caseData.time});
+    form.appendChild(inp);
+    let iframe=document.getElementById("gs_iframe");
+    if(!iframe){iframe=document.createElement("iframe");iframe.name="gs_iframe";iframe.id="gs_iframe";iframe.style.display="none";document.body.appendChild(iframe);}
+    document.body.appendChild(form); form.submit(); 
+    setTimeout(()=>{document.body.removeChild(form);},3000);
   };
 
   const goED=r=>{const qi=genQ();setQ(qi);setEdR(r);rec("ED",{ref:qi.num,reason:r});setSc("ed");};
@@ -500,7 +509,7 @@ function App(){
         </div>
         <div style={{background:"linear-gradient(135deg,#fefce8,#fef9c3)",border:"1.5px solid #fde047",borderRadius:13,padding:"12px 14px",marginBottom:14,display:"flex",gap:9,alignItems:"flex-start"}}>
           <span style={{fontSize:18,flexShrink:0}}>⚖️</span>
-          <p style={{fontSize:11.5,color:"#713f12",margin:0,lineHeight:1.6,fontWeight:600}}>Personal Data Protection Act 2010 (Act 709) · Kementerian Kesihatan Malaysia</p>
+          <p style={{fontSize:11.5,color:"#713f12",margin:0,lineHeight:1.6,fontWeight:600}}>Personal Data Protection Act 2010 (Act 709) · Hospital Kuala Lumpur / KKM</p>
         </div>
         <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:13,padding:"14px",marginBottom:14}}>
           {t.pdpaPoints.map((pt,i)=><div key={i} style={{display:"flex",gap:9,marginBottom:i<t.pdpaPoints.length-1?10:0}}>
@@ -649,7 +658,7 @@ function App(){
 
       </div>
     </div>
-    <p className="attribution">Adapted from i-CEMAS · icemas.hmelaka.moh.gov.my · JKN Melaka / KKM</p>
+    <p className="attribution">ED HKL Pre-Triage System · Hospital Kuala Lumpur | Questions adapted from i-CEMAS (credit: JKN Melaka / KKM)</p>
   </div>;
 }
 
