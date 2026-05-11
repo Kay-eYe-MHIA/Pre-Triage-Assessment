@@ -35,7 +35,7 @@ const { useState, useEffect } = React;
 // ── CHANGE THIS PIN before going live ──
 const STAFF_PIN = "1234";
 const CASE_KEY  = "icemas_cases_v1";
-const GS_URL    = "https://script.google.com/macros/s/AKfycbxqNTY_Syya6YeJ6wx92NrqJRhKa2hFiMdgtgnz_O6EoSg79cHsqjILSjF4a_4vYQwt1w/exec";
+const GS_URL    = "https://script.google.com/macros/s/AKfycbxDG4mqjI61-UhiYXojcWaA1R22ggoy255uOIisXZRGotkmkHaXPSSaVyxfmistRfTWrA/exec";
 
 // ── Translations ───────────────────────────────────────────────────────────────
 const T = {
@@ -419,9 +419,14 @@ function App(){
 
   const rec=(outcome,extra={})=>{
     const now=new Date();
+    const outcomeLabel = outcome==="KK"
+      ? "STABLE — Suitable for Redirection to Klinik Kesihatan"
+      : "REQUIRES EMERGENCY DEPARTMENT";
+    const triageCategory = outcome==="KK" ? "GREEN (Stable / Non-Urgent)" : "RED / YELLOW (Emergency)";
     const caseData={rawTime:now.toISOString(),time:`${fmtDate(now)} ${fmtTime(now)}`,
       name:pt.name,ic:pt.ic,phone:pt.phone,gender:pt.gender,age:calcAge(pt.dob),
-      arrival:pt.arrival||"-",address:pt.address,pdpa:"Yes",outcome,
+      arrival:pt.arrival||"-",address:pt.address,pdpa:"Yes",
+      outcome, outcomeLabel, triageCategory,
       comorbid:Array.isArray(ans.comorbid_list)?ans.comorbid_list.join(", "):"-",
       allergy:ans.allergy||"-",duration:ans.duration||"-",prior:ans.prior||"-",
       serviceType:ans.service_type||"-",pain:ans.pain||"-",mobility:ans.mobility||"-",
