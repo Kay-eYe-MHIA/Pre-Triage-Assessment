@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>i-CEMAS Pre-Triage · JKN Melaka</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:linear-gradient(150deg,#f0f9ff 0%,#e0f2fe 50%,#f0fdf4 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes popIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+  .opt-btn{transition:all .18s ease;width:100%;padding:13px 16px;border-radius:13px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .opt-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.13)!important}
+  .multi-opt{transition:all .15s ease;cursor:pointer;padding:12px 16px;border-radius:12px;display:flex;align-items:center;gap:12px}
+  .multi-opt:hover{transform:translateY(-1px)}
+  .cta{transition:all .2s ease;cursor:pointer;border:none;font-family:inherit}
+  .cta:hover{transform:translateY(-2px);filter:brightness(1.06)}
+  .card{width:100%;max-width:520px;background:#fff;border-radius:28px;box-shadow:0 24px 80px rgba(0,0,0,.11),0 4px 16px rgba(0,0,0,.06);overflow:hidden}
+  .body{padding:24px;max-height:78vh;overflow-y:auto}
+  .hdr{background:linear-gradient(135deg,#0369a1,#0284c7);padding:15px 20px;display:flex;align-items:center;gap:12px}
+  input,select{font-family:inherit;font-size:13.5px;border-radius:10px;border:1.5px solid #e2e8f0;padding:11px 14px;width:100%;outline:none;background:#f8fafc;transition:border .2s}
+  input:focus,select:focus{border-color:#0284c7;box-shadow:0 0 0 3px rgba(2,132,199,.1)}
+  .attribution{color:#94a3b8;font-size:10.5px;margin-top:14px;text-align:center}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+// ── CHANGE THIS PIN before going live ──
+const STAFF_PIN = "1234";
+const CASE_KEY  = "icemas_cases_v1";
+
+// ── Translations ───────────────────────────────────────────────────────────────
+const T = {
+en:{
+  tag:"i-CEMAS · JKN Melaka", title:"Pre-Triage Assessment System",
+  exit:"✕ Exit", back:"← Back", confirm:"Confirm & Continue →",
+  stepLbl:"STEP", of:"/",
+  wTitle:"Quick Health Assessment",
+  wSub:"Based on the i-CEMAS triage system · Hospital Melaka, JKN Melaka.",
+  wDesc:"Complete privacy consent and patient registration before clinical questions.",
+  f1l:"PDPA Consent",f1s:"privacy protected",f2l:"iCEMAS + Extended",f2s:"clinical questions",
+  f3l:"Analytics ready",f3s:"case tracking",f4l:"Instant cert",f4s:"or queue number",
+  startBtn:"Start Assessment →", emergency:"Life-threatening? Go directly to ED or call 999",
+  staffBtn:"🔐 Staff Dashboard",
+  pdpaTitle:"Privacy Consent (PDPA 2010)", pdpaSub:"Please read carefully before proceeding",
+  pdpaPoints:[
+    "Your personal data (name, IC, contact, health info) is collected under the Personal Data Protection Act 2010 (Act 709).",
+    "Used solely for clinical triage, care redirection, and follow-up by authorised JKN Melaka / Hospital Melaka staff.",
+    "Your data will NOT be shared with third parties without consent, except as required by law.",
+    "Retained per MOH data retention policy.",
+    "You have the right to access and correct your data — contact the hospital Data Protection Officer.",
+    "By proceeding, you consent to processing of your personal data for clinical triage purposes.",
+  ],
+  pdpaChk:"I have read and agree to the Privacy Notice above, and consent to my personal data being processed for clinical triage purposes.",
+  pdpaBtn:"I Agree & Proceed →", pdpaNo:"If you do not agree, please approach the registration counter.",
+  regTitle:"Patient Registration", regSub:"Please fill in accurately",
+  fName:"Full Name",pName:"As per IC / MyKad",
+  fIC:"IC / MyKad Number",pIC:"e.g. 901231-14-5678",
+  icErr:"Please enter a valid 12-digit IC number",
+  fPhone:"Contact Number",pPhone:"e.g. 0123456789",
+  fDOB:"Date of Birth",
+  fGender:"Gender",male:"Male",female:"Female",
+  fArrival:"Arrival Mode",
+  arrivals:["Walk-in","Family / Friend","Ambulance","Police","Others"],
+  fAddr:"Address / Area",pAddr:"Taman, Daerah, Negeri",
+  nextBtn:"Next: Clinical Questions →",
+  edTitle:"Emergency Department Required",
+  qLbl:"Your Queue Number",regAt:"Registered at",
+  ptLbl:"Patient",
+  iTitle:"📋 Instructions:",
+  iList:["Show this screen at ED Registration Counter","Your number will appear on the waiting board","Do NOT leave the ED waiting area","Tell staff immediately if condition worsens"],
+  abscond:"⚠️ If patient leaves without being seen, staff will follow up using registered contact details.",
+  newAss:"← New Assessment",
+  kkTitle:"Suitable for Klinik Kesihatan",
+  kkDef:"Your condition is stable. A Klinik Kesihatan can provide care with shorter waiting time.",
+  refCert:"Referral Certificate",
+  kkInstr:"🏥 Proceed to your nearest Klinik Kesihatan (KK)",
+  kkValid:"Valid today · Subsidised rate · Present certificate at registration",
+  dlBtn:"📄 Download Referral Certificate",
+  warnTitle:"⚠️ Return to ED immediately if:",
+  warnBody:"Difficulty breathing · Chest pain · Unconscious · Uncontrolled bleeding · Seizure · Rapid worsening",
+  analytic:"📊 Case recorded for clinical analytics",
+  pinTitle:"Staff Access",pinSub:"Enter staff PIN to access dashboard",
+  pinLbl:"PIN",pinPH:"Enter PIN",pinBtn:"Access Dashboard →",pinErr:"Incorrect PIN. Please try again.",
+  logout:"Logout",
+  dashTitle:"Case Analytics Dashboard",
+  dTotal:"Total Cases",dED:"ED Cases",dKK:"KK Redirected",
+  dToday:"Today",dAll:"All Time",
+  dExport:"Export CSV",dClear:"Clear All Data",dConfirm:"Confirm Delete",dNoData:"No cases recorded yet.",
+  dTime:"Time",dName:"Name",dIC:"IC No.",dGender:"Gender",dAge:"Age",dArr:"Arrival",dOut:"Outcome",dRef:"Ref / Queue",
+  secs:{Service:"Service","Patient Info":"Patient Info","Medical History":"Medical History","Clinical Assessment":"Clinical Assessment","Additional":"Additional Assessment"},
+},
+ms:{
+  tag:"i-CEMAS · JKN Melaka", title:"Sistem Penilaian Pra-Triaj",
+  exit:"✕ Keluar", back:"← Kembali", confirm:"Sahkan & Teruskan →",
+  stepLbl:"LANGKAH", of:"/",
+  wTitle:"Penilaian Kesihatan Ringkas",
+  wSub:"Berdasarkan sistem triaj i-CEMAS · Hospital Melaka, JKN Melaka.",
+  wDesc:"Lengkapkan persetujuan privasi dan pendaftaran sebelum soalan klinikal.",
+  f1l:"Persetujuan PDPA",f1s:"privasi dilindungi",f2l:"iCEMAS + Lanjutan",f2s:"soalan klinikal",
+  f3l:"Siap analitik",f3s:"pengesanan kes",f4l:"Sijil segera",f4s:"atau nombor giliran",
+  startBtn:"Mula Penilaian →", emergency:"Kecemasan? Terus ke JK atau hubungi 999",
+  staffBtn:"🔐 Papan Pemuka Kakitangan",
+  pdpaTitle:"Persetujuan Privasi (PDPA 2010)", pdpaSub:"Sila baca dengan teliti sebelum meneruskan",
+  pdpaPoints:[
+    "Data peribadi anda (nama, IC, hubungan, maklumat kesihatan) dikumpul di bawah Akta Perlindungan Data Peribadi 2010 (Akta 709).",
+    "Digunakan semata-mata untuk triaj klinikal dan tindakan susulan oleh kakitangan JKN Melaka / Hospital Melaka yang diberi kuasa.",
+    "Data anda TIDAK akan dikongsi dengan pihak ketiga tanpa persetujuan, kecuali dikehendaki undang-undang.",
+    "Disimpan mengikut polisi penyimpanan data KKM.",
+    "Anda berhak mengakses dan membetulkan data — hubungi Pegawai Perlindungan Data hospital.",
+    "Dengan meneruskan, anda bersetuju data peribadi anda diproses bagi tujuan triaj klinikal.",
+  ],
+  pdpaChk:"Saya telah membaca dan bersetuju dengan Notis Privasi di atas, dan memberi persetujuan untuk data peribadi saya diproses bagi tujuan triaj klinikal.",
+  pdpaBtn:"Saya Bersetuju & Teruskan →", pdpaNo:"Jika tidak bersetuju, sila ke kaunter pendaftaran.",
+  regTitle:"Pendaftaran Pesakit", regSub:"Sila isi dengan tepat",
+  fName:"Nama Penuh",pName:"Seperti dalam IC / MyKad",
+  fIC:"No. IC / MyKad",pIC:"cth. 901231-14-5678",
+  icErr:"Sila masukkan nombor IC 12 digit yang sah",
+  fPhone:"Nombor Telefon",pPhone:"cth. 0123456789",
+  fDOB:"Tarikh Lahir",
+  fGender:"Jantina",male:"Lelaki",female:"Perempuan",
+  fArrival:"Cara Ketibaan",
+  arrivals:["Datang sendiri","Keluarga / Rakan","Ambulans","Polis","Lain-lain"],
+  fAddr:"Alamat / Kawasan",pAddr:"Taman, Daerah, Negeri",
+  nextBtn:"Seterusnya: Soalan Klinikal →",
+  edTitle:"Jabatan Kecemasan Diperlukan",
+  qLbl:"Nombor Giliran Anda",regAt:"Didaftarkan pada",
+  ptLbl:"Pesakit",
+  iTitle:"📋 Arahan:",
+  iList:["Tunjukkan skrin ini di Kaunter Pendaftaran JK","Nombor anda akan dipanggil pada papan menunggu","JANGAN tinggalkan kawasan menunggu JK","Maklumkan kakitangan segera jika keadaan memburuk"],
+  abscond:"⚠️ Jika pesakit meninggalkan hospital tanpa diperiksa, kakitangan akan menghubungi menggunakan maklumat yang didaftarkan.",
+  newAss:"← Penilaian Baharu",
+  kkTitle:"Sesuai untuk Klinik Kesihatan",
+  kkDef:"Keadaan anda stabil. Klinik Kesihatan boleh memberi penjagaan dengan masa menunggu yang lebih singkat.",
+  refCert:"Sijil Rujukan",
+  kkInstr:"🏥 Pergi ke Klinik Kesihatan (KK) terdekat",
+  kkValid:"Sah hari ini · Kadar bersubsidi · Tunjukkan sijil semasa pendaftaran",
+  dlBtn:"📄 Muat Turun Sijil Rujukan",
+  warnTitle:"⚠️ Kembali ke JK dengan segera jika:",
+  warnBody:"Sukar bernafas · Sakit dada · Pengsan · Pendarahan tidak terkawal · Sawan · Keadaan semakin teruk",
+  analytic:"📊 Kes direkodkan untuk analitik klinikal",
+  pinTitle:"Akses Kakitangan",pinSub:"Masukkan PIN untuk akses papan pemuka",
+  pinLbl:"PIN",pinPH:"Masukkan PIN",pinBtn:"Akses Papan Pemuka →",pinErr:"PIN tidak betul. Sila cuba lagi.",
+  logout:"Log Keluar",
+  dashTitle:"Papan Pemuka Analitik Kes",
+  dTotal:"Jumlah Kes",dED:"Kes JK",dKK:"Dialih ke KK",
+  dToday:"Hari Ini",dAll:"Semua Masa",
+  dExport:"Eksport CSV",dClear:"Padam Semua Data",dConfirm:"Sahkan Padam",dNoData:"Tiada kes direkodkan.",
+  dTime:"Masa",dName:"Nama",dIC:"No. IC",dGender:"Jantina",dAge:"Umur",dArr:"Ketibaan",dOut:"Hasil",dRef:"Rujukan",
+  secs:{Service:"Perkhidmatan","Patient Info":"Maklumat Pesakit","Medical History":"Sejarah Perubatan","Clinical Assessment":"Penilaian Klinikal","Additional":"Penilaian Tambahan"},
+},
+};
+
+// ── Clinical Questions ─────────────────────────────────────────────────────────
+const getSteps = (l) => [
+  {id:"service_type",sec:"Service",src:"iCEMAS",
+   q:l==="en"?"What type of service is required?":"Apakah jenis perkhidmatan yang diperlukan?",
+   hint:l==="en"?"Select the most appropriate":"Pilih yang paling sesuai",type:"single",
+   opts:[
+    {lbl:l==="en"?"Medical consultation / treatment":"Perundingan / rawatan perubatan",val:"consult",next:"conscious"},
+    {lbl:l==="en"?"Suture removal":"Tanggal jahitan",val:"suture",kk:true,kkR:l==="en"?"Suture removal can be done at a Klinik Kesihatan.":"Tanggal jahitan boleh dilakukan di Klinik Kesihatan."},
+    {lbl:l==="en"?"Wound dressing / Catheter / Ryles Tube":"Balutan luka / Kateter / Tiub Ryles",val:"dressing",kk:true,kkR:l==="en"?"Available at Klinik Kesihatan.":"Tersedia di Klinik Kesihatan."},
+    {lbl:l==="en"?"Medical leave extension (MC)":"Lanjutan cuti sakit (MC)",val:"mc",kk:true,kkR:l==="en"?"MC extension available at Klinik Kesihatan.":"Lanjutan MC boleh diperolehi di Klinik Kesihatan."},
+    {lbl:l==="en"?"Appointment rescheduling":"Penjadualan semula temujanji",val:"appt",kk:true,kkR:l==="en"?"Please visit Klinik Kesihatan to reschedule.":"Sila lawati Klinik Kesihatan untuk menjadualkan semula."},
+    {lbl:l==="en"?"Medication refill / Out of medication":"Tambah ubat / Kehabisan ubat",val:"meds",kk:true,kkR:l==="en"?"Medication refills at Klinik Kesihatan.":"Tambahan ubat di Klinik Kesihatan."},
+   ]},
+  {id:"conscious",sec:"Clinical Assessment",src:"iCEMAS",
+   q:l==="en"?"Is the patient conscious?":"Adakah pesakit sedar?",type:"single",
+   opts:[
+    {lbl:l==="en"?"Yes — alert and responsive":"Ya — sedar dan responsif",val:"yes",next:"breathing"},
+    {lbl:l==="en"?"No — unconscious":"Tidak — tidak sedarkan diri",val:"no",ed:true,edR:l==="en"?"Unconscious patient requires immediate ED care.":"Pesakit tidak sedar memerlukan rawatan JK dengan segera."},
+   ]},
+  {id:"breathing",sec:"Clinical Assessment",src:"iCEMAS",
+   q:l==="en"?"Does the patient have difficulty breathing?":"Adakah pesakit mengalami kesukaran bernafas?",type:"single",
+   opts:[
+    {lbl:l==="en"?"Yes — difficulty breathing":"Ya — sukar bernafas",val:"yes",ed:true,edR:l==="en"?"Breathing difficulty requires immediate ED assessment.":"Kesukaran bernafas memerlukan penilaian JK dengan segera."},
+    {lbl:l==="en"?"No — breathing normal":"Tidak — pernafasan normal",val:"no",next:"chest_pain"},
+   ]},
+  {id:"chest_pain",sec:"Clinical Assessment",src:"iCEMAS",
+   q:l==="en"?"Does the patient have chest pain?":"Adakah pesakit mengalami sakit dada?",type:"single",
+   opts:[
+    {lbl:l==="en"?"Yes":"Ya",val:"yes",next:"chest_duration"},
+    {lbl:l==="en"?"No":"Tidak",val:"no",next:"seizure"},
+   ]},
+  {id:"chest_duration",sec:"Clinical Assessment",src:"iCEMAS",
+   q:l==="en"?"How long has the chest pain been present?":"Berapa lama sakit dada berlaku?",type:"single",
+   opts:[
+    {lbl:l==="en"?"Within last 3 days (acute)":"Dalam 3 hari lepas (akut)",val:"acute",ed:true,edR:l==="en"?"Acute chest pain requires ED evaluation.":"Sakit dada akut memerlukan penilaian JK."},
+    {lbl:l==="en"?"More than 3 days (chronic)":"Lebih 3 hari (kronik)",val:"chronic",next:"seizure"},
+   ]},
+  {id:"seizure",sec:"Clinical Assessment",src:"iCEMAS",
+   q:l==="en"?"Is the patient experiencing seizures?":"Adakah pesakit mengalami sawan?",type:"single",
+   opts:[
+    {lbl:l==="en"?"Currently seizing":"Sedang mengalami sawan",val:"active",ed:true,edR:l==="en"?"Active seizure — immediate ED care required.":"Sawan aktif — rawatan JK diperlukan dengan segera."},
+    {lbl:l==="en"?"More than 2 seizures in 24 hours":"Lebih 2 sawan dalam 24 jam",val:"recurrent",ed:true,edR:l==="en"?"Recurrent seizures require ED evaluation.":"Sawan berulang memerlukan penilaian JK."},
+    {lbl:l==="en"?"No seizures":"Tiada sawan",val:"no",next:"abdo_pain"},
+   ]},
+  {id:"abdo_pain",sec:"Clinical Assessment",src:"iCEMAS",
+   q:l==="en"?"Does the patient have abdominal / stomach pain?":"Adakah pesakit mengalami sakit perut?",type:"single",
+   opts:[
+    {lbl:l==="en"?"Yes":"Ya",val:"yes",next:"abdo_duration"},
+    {lbl:l==="en"?"No":"Tidak",val:"no",next:"injury"},
+   ]},
+  {id:"abdo_duration",sec:"Clinical Assessment",src:"iCEMAS",
+   q:l==="en"?"How long has the abdominal pain been present?":"Berapa lama sakit perut berlaku?",type:"single",
+   opts:[
+    {lbl:l==="en"?"Within last 3 days (acute)":"Dalam 3 hari lepas (akut)",val:"acute",ed:true,edR:l==="en"?"Acute abdominal pain requires ED evaluation.":"Sakit perut akut memerlukan penilaian JK."},
+    {lbl:l==="en"?"More than 3 days (chronic)":"Lebih 3 hari (kronik)",val:"chronic",next:"injury"},
+   ]},
+  {id:"injury",sec:"Clinical Assessment",src:"iCEMAS",
+   q:l==="en"?"Has the patient sustained any injury or been in an accident?":"Adakah pesakit mengalami kecederaan atau kemalangan?",type:"single",
+   opts:[
+    {lbl:l==="en"?"Yes — injury or accident":"Ya — kecederaan atau kemalangan",val:"yes",ed:true,edR:l==="en"?"Injury / accident requires ED assessment.":"Kecederaan / kemalangan memerlukan penilaian JK."},
+    {lbl:l==="en"?"No":"Tidak",val:"no",next:"bleeding"},
+   ]},
+  {id:"bleeding",sec:"Clinical Assessment",src:"iCEMAS",
+   q:l==="en"?"Does the patient have any bleeding?":"Adakah pesakit mengalami sebarang pendarahan?",type:"single",
+   opts:[
+    {lbl:l==="en"?"Yes — bleeding present":"Ya — terdapat pendarahan",val:"yes",ed:true,edR:l==="en"?"Active bleeding requires ED evaluation.":"Pendarahan aktif memerlukan penilaian JK."},
+    {lbl:l==="en"?"No":"Tidak",val:"no",next:"pregnant"},
+   ]},
+  {id:"pregnant",sec:"Additional",src:"Additional",
+   q:l==="en"?"Is the patient female and currently pregnant?":"Adakah pesakit perempuan dan sedang hamil?",type:"single",
+   opts:[
+    {lbl:l==="en"?"Yes, pregnant":"Ya, sedang hamil",val:"yes",next:"preg_week"},
+    {lbl:l==="en"?"No / Not applicable":"Tidak / Tidak berkaitan",val:"no",next:"fever"},
+   ]},
+  {id:"preg_week",sec:"Additional",src:"iCEMAS",
+   q:l==="en"?"Pregnancy status:":"Status kehamilan:",type:"single",
+   opts:[
+    {lbl:l==="en"?"≥28 weeks with signs of labour (pain, ruptured membrane, blood-stained discharge)":"≥28 minggu dengan tanda bersalin (sakit, pecah air ketuban, lendir bercampur darah)",val:"labour",ed:true,edR:l==="en"?"Signs of labour at ≥28 weeks — immediate ED care.":"Tanda bersalin ≥28 minggu — rawatan JK segera."},
+    {lbl:l==="en"?"≥28 weeks other complications, or <28 weeks":"≥28 minggu komplikasi lain, atau <28 minggu",val:"other",next:"fever"},
+   ]},
+  {id:"fever",sec:"Additional",src:"Additional",
+   q:l==="en"?"Does the patient have a fever?":"Adakah pesakit demam?",type:"single",
+   opts:[
+    {lbl:l==="en"?"No fever":"Tiada demam",val:"none",next:"vomiting"},
+    {lbl:l==="en"?"Mild fever (< 38.5 °C)":"Demam ringan (< 38.5 °C)",val:"mild",next:"vomiting"},
+    {lbl:l==="en"?"High fever (≥ 38.5 °C) with rigors":"Demam tinggi (≥ 38.5 °C) dengan menggigil",val:"high",ed:true,edR:l==="en"?"High fever with rigors may indicate sepsis — ED required.":"Demam tinggi dengan menggigil — mungkin sepsis, penilaian JK diperlukan."},
+   ]},
+  {id:"vomiting",sec:"Additional",src:"Additional",
+   q:l==="en"?"Is the patient vomiting or unable to keep fluids down?":"Adakah pesakit muntah atau tidak dapat minum air?",type:"single",
+   opts:[
+    {lbl:l==="en"?"No":"Tidak",val:"no",next:"pain"},
+    {lbl:l==="en"?"Mild — once or twice":"Ringan — sekali atau dua kali",val:"mild",next:"pain"},
+    {lbl:l==="en"?"Persistent / with blood":"Berterusan / ada darah",val:"severe",ed:true,edR:l==="en"?"Persistent or bloody vomiting requires ED evaluation.":"Muntah berterusan atau ada darah memerlukan penilaian JK."},
+   ]},
+  {id:"pain",sec:"Additional",src:"Additional",
+   q:l==="en"?"Rate the patient's pain level (0–10):":"Tahap kesakitan pesakit (0–10):",
+   hint:l==="en"?"0 = No pain  |  10 = Worst possible pain":"0 = Tiada sakit  |  10 = Kesakitan paling teruk",type:"single",
+   opts:[
+    {lbl:l==="en"?"0–3: Mild — manageable":"0–3: Ringan — boleh ditangani",val:"mild",next:"mobility"},
+    {lbl:l==="en"?"4–6: Moderate pain":"4–6: Sederhana",val:"moderate",next:"mobility"},
+    {lbl:l==="en"?"7–10: Severe / unbearable":"7–10: Teruk / tidak tertanggung",val:"severe",ed:true,edR:l==="en"?"Severe pain (7–10/10) requires ED assessment.":"Kesakitan teruk (7–10/10) memerlukan penilaian JK."},
+   ]},
+  {id:"mobility",sec:"Additional",src:"Additional",
+   q:l==="en"?"Can the patient walk / move independently?":"Bolehkah pesakit berjalan / bergerak sendiri?",type:"single",
+   opts:[
+    {lbl:l==="en"?"Yes — independently":"Ya — secara berdikari",val:"yes",next:"comorbid"},
+    {lbl:l==="en"?"Needs some assistance":"Memerlukan sedikit bantuan",val:"partial",next:"comorbid"},
+    {lbl:l==="en"?"Cannot move / bedridden":"Tidak boleh bergerak / berbaring",val:"no",ed:true,edR:l==="en"?"Inability to mobilise requires ED assessment.":"Ketidakupayaan bergerak memerlukan penilaian JK."},
+   ]},
+  {id:"comorbid",sec:"Medical History",src:"iCEMAS",
+   q:l==="en"?"Does the patient have any existing health conditions?":"Adakah pesakit mempunyai penyakit sedia ada?",type:"single",
+   opts:[
+    {lbl:l==="en"?"Yes":"Ya",val:"yes",next:"comorbid_list"},
+    {lbl:l==="en"?"No":"Tidak",val:"no",next:"allergy"},
+   ]},
+  {id:"comorbid_list",sec:"Medical History",src:"iCEMAS",
+   q:l==="en"?"Select all existing medical conditions:":"Pilih semua penyakit sedia ada:",
+   hint:l==="en"?"Select all that apply":"Pilih semua yang berkaitan",type:"multi",
+   opts:[
+    {lbl:l==="en"?"Diabetes Mellitus":"Kencing Manis (DM)",val:"dm"},
+    {lbl:l==="en"?"Hypertension":"Darah Tinggi",val:"htn"},
+    {lbl:l==="en"?"Ischaemic Heart Disease":"Penyakit Jantung Iskemia",val:"ihd"},
+    {lbl:l==="en"?"Asthma / Respiratory":"Asma / Penyakit Pernafasan",val:"asthma"},
+    {lbl:l==="en"?"Stroke / Neurological":"Strok / Neurologi",val:"stroke"},
+    {lbl:l==="en"?"Chronic Kidney Disease":"Penyakit Buah Pinggang Kronik",val:"ckd"},
+    {lbl:l==="en"?"Cancer / On chemotherapy":"Kanser / Sedang kemo",val:"cancer"},
+    {lbl:l==="en"?"Other":"Lain-lain",val:"other"},
+   ],next:"allergy"},
+  {id:"allergy",sec:"Medical History",src:"Additional",
+   q:l==="en"?"Does the patient have known drug allergies?":"Adakah pesakit mempunyai alahan ubat?",type:"single",
+   opts:[
+    {lbl:l==="en"?"No known drug allergy":"Tiada alahan ubat diketahui",val:"none",next:"duration"},
+    {lbl:l==="en"?"Yes — known (not reacting now)":"Ya — ada alahan (tiada reaksi sekarang)",val:"yes",next:"duration"},
+    {lbl:l==="en"?"Currently reacting (rash, swelling, difficulty breathing)":"Sedang mengalami reaksi (ruam, bengkak, sukar bernafas)",val:"active",ed:true,edR:l==="en"?"Active allergic reaction / anaphylaxis — immediate ED care.":"Reaksi alahan aktif — rawatan JK segera."},
+   ]},
+  {id:"duration",sec:"Additional",src:"Additional",
+   q:l==="en"?"How long have the symptoms been present?":"Berapa lama gejala telah berlaku?",type:"single",
+   opts:[
+    {lbl:l==="en"?"Less than 24 hours":"Kurang daripada 24 jam",val:"under24",next:"prior"},
+    {lbl:l==="en"?"1–3 days":"1–3 hari",val:"1to3",next:"prior"},
+    {lbl:l==="en"?"4–7 days":"4–7 hari",val:"4to7",next:"prior"},
+    {lbl:l==="en"?"More than 1 week":"Lebih 1 minggu",val:"over7",next:"prior"},
+   ]},
+  {id:"prior",sec:"Additional",src:"Additional",
+   q:l==="en"?"Visited any clinic/hospital for this in the last 7 days?":"Adakah pesakit telah ke klinik/hospital untuk aduan ini dalam 7 hari lepas?",type:"single",
+   opts:[
+    {lbl:l==="en"?"No — first visit":"Tidak — lawatan pertama",val:"no",next:"result"},
+    {lbl:l==="en"?"Yes — visited KK / private clinic":"Ya — ke KK / klinik swasta",val:"kk",next:"result"},
+    {lbl:l==="en"?"Yes — visited ED / hospital":"Ya — ke JK / hospital",val:"ed",next:"result"},
+   ]},
+];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const genQ   = () => ({num:`ED-${Math.floor(100+Math.random()*900)}`,time:new Date()});
+const genRef = () => `KK-${Date.now().toString().slice(-6)}`;
+const fmtDate= d => d.toLocaleDateString("en-MY",{day:"2-digit",month:"long",year:"numeric"});
+const fmtTime= d => d.toLocaleTimeString("en-MY",{hour:"2-digit",minute:"2-digit"});
+const calcAge= dob => { if(!dob)return"-"; return Math.floor((Date.now()-new Date(dob))/(1000*60*60*24*365.25)); };
+const loadCases = () => { try{return JSON.parse(localStorage.getItem(CASE_KEY)||"[]");}catch{return[];} };
+const addCase   = c  => { try{const a=loadCases();a.push(c);localStorage.setItem(CASE_KEY,JSON.stringify(a));}catch{} };
+const nukeCases = () => { try{localStorage.removeItem(CASE_KEY);}catch{} };
+
+const exportCSV = (cases, t) => {
+  const hdr=[t.dTime,t.dName,t.dIC,t.dGender,t.dAge,t.dArr,t.dOut,t.dRef,"PDPA","Comorbidities","Allergy","Symptom Duration","Prior Visit"].join(",");
+  const rows=cases.map(c=>[`"${c.time}"`,`"${c.name}"`,`"${c.ic}"`,`"${c.gender}"`,`"${c.age}"`,`"${c.arrival}"`,`"${c.outcome}"`,`"${c.ref}"`,`"Yes"`,`"${c.comorbid}"`,`"${c.allergy}"`,`"${c.duration}"`,`"${c.prior}"`].join(",")).join("\n");
+  const blob=new Blob([hdr+"\n"+rows],{type:"text/csv"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download=`iCEMAS_${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);
+};
+
+const dlCert = (pt, ans, ref, steps, lang) => {
+  const t=T[lang]; const now=new Date();
+  const lbl={service_type:lang==="en"?"Service":"Perkhidmatan",conscious:lang==="en"?"Consciousness":"Kesedaran",breathing:lang==="en"?"Breathing":"Pernafasan",chest_pain:lang==="en"?"Chest Pain":"Sakit Dada",chest_duration:lang==="en"?"Chest Pain Duration":"Tempoh Sakit Dada",seizure:lang==="en"?"Seizures":"Sawan",abdo_pain:lang==="en"?"Abdominal Pain":"Sakit Perut",abdo_duration:lang==="en"?"Abdo Duration":"Tempoh Sakit Perut",injury:lang==="en"?"Injury":"Kecederaan",bleeding:lang==="en"?"Bleeding":"Pendarahan",pregnant:lang==="en"?"Pregnant":"Hamil",preg_week:lang==="en"?"Pregnancy Status":"Status Kehamilan",fever:lang==="en"?"Fever":"Demam",vomiting:lang==="en"?"Vomiting":"Muntah",pain:lang==="en"?"Pain Score":"Skor Kesakitan",mobility:lang==="en"?"Mobility":"Mobiliti",comorbid:lang==="en"?"Conditions":"Penyakit",comorbid_list:lang==="en"?"Conditions Detail":"Butiran Penyakit",allergy:lang==="en"?"Drug Allergy":"Alahan Ubat",duration:lang==="en"?"Symptom Duration":"Tempoh Gejala",prior:lang==="en"?"Prior Visit":"Lawatan Terdahulu"};
+  const lines=steps.filter(s=>ans[s.id]!==undefined).map(s=>{const v=ans[s.id];if(Array.isArray(v))return`${lbl[s.id]||s.id}: ${s.opts.filter(o=>v.includes(o.val)).map(o=>o.lbl).join(", ")}`;const o=s.opts?.find(o=>o.val===v);return`${lbl[s.id]||s.id}: ${o?o.lbl:v}`;}).join("\n");
+  const c=`\n══════════════════════════════════════════════\n  ${lang==="en"?"KLINIK KESIHATAN REFERRAL CERTIFICATE":"SIJIL RUJUKAN KLINIK KESIHATAN"}\n  i-CEMAS Pre-Triage System · JKN Melaka\n══════════════════════════════════════════════\n${lang==="en"?"Ref No":"No. Rujukan"}     : ${ref}\n${lang==="en"?"Date":"Tarikh"}        : ${fmtDate(now)}\n${lang==="en"?"Time":"Masa"}         : ${fmtTime(now)}\n\n${lang==="en"?"PATIENT DETAILS":"BUTIRAN PESAKIT"}\n──────────────────────────────────────────────\n${lang==="en"?"Name":"Nama"}         : ${pt.name||"-"}\n${lang==="en"?"IC Number":"No. IC"}    : ${pt.ic||"-"}\n${lang==="en"?"Contact":"Telefon"}     : ${pt.phone||"-"}\n${lang==="en"?"DOB":"T/Lahir"}        : ${pt.dob||"-"}\n${lang==="en"?"Gender":"Jantina"}      : ${pt.gender||"-"}\n${lang==="en"?"Area":"Kawasan"}        : ${pt.address||"-"}\nPDPA          : ${lang==="en"?"Consent Obtained":"Persetujuan Diperoleh"}\n\n${lang==="en"?"OUTCOME":"HASIL"}        : ${lang==="en"?"STABLE — Suitable for Klinik Kesihatan":"STABIL — Sesuai untuk Klinik Kesihatan"}\n──────────────────────────────────────────────\n${lang==="en"?"ASSESSMENT SUMMARY":"RINGKASAN PENILAIAN"}\n──────────────────────────────────────────────\n${lines}\n──────────────────────────────────────────────\n${lang==="en"?"RECOMMENDED ACTION":"TINDAKAN YANG DISYORKAN"}\n──────────────────────────────────────────────\n${lang==="en"?"Proceed to nearest Klinik Kesihatan (KK).\nPresent this certificate at registration.\nValid today only. Subsidised rate applies.":"Pergi ke Klinik Kesihatan (KK) terdekat.\nTunjukkan sijil ini di kaunter pendaftaran.\nSah hari ini sahaja. Kadar bersubsidi terpakai."}\n──────────────────────────────────────────────\n${lang==="en"?"RETURN TO ED IMMEDIATELY IF:":"KEMBALI KE JK DENGAN SEGERA JIKA:"}\n${lang==="en"?"Breathing difficulty, Chest pain, Unconscious,\nUncontrolled bleeding, Seizure, Rapid worsening.\nEmergency: Call 999":"Sukar bernafas, Sakit dada, Pengsan,\nPendarahan tidak terkawal, Sawan, Keadaan semakin teruk.\nKecemasan: Hubungi 999"}\n══════════════════════════════════════════════\nGenerated by i-CEMAS | icemas.hmelaka.moh.gov.my\n══════════════════════════════════════════════`;
+  const blob=new Blob([c],{type:"text/plain"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`iCEMAS_KK_${ref}.txt`;a.click();URL.revokeObjectURL(url);
+};
+
+// ── Tiny UI parts ─────────────────────────────────────────────────────────────
+const Pill=({lbl,col="#0284c7",sm})=><span style={{display:"inline-block",padding:sm?"1px 8px":"2px 10px",borderRadius:99,background:`${col}18`,color:col,fontSize:sm?9:11,fontWeight:700,letterSpacing:1,textTransform:"uppercase"}}>{lbl}</span>;
+const Src=({s})=><Pill lbl={s} col={s==="iCEMAS"?"#6366f1":"#f59e0b"} sm/>;
+const Bar=({done,tot,t})=><div style={{marginBottom:20}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><span style={{fontSize:11,color:"#94a3b8",fontFamily:"monospace"}}>{t.stepLbl} {done} {t.of} {tot}</span><span style={{fontSize:11,color:"#0284c7",fontWeight:700,fontFamily:"monospace"}}>{Math.round(done/tot*100)}%</span></div><div style={{height:3,background:"#e2e8f0",borderRadius:99}}><div style={{height:"100%",width:`${done/tot*100}%`,background:"linear-gradient(90deg,#0284c7,#06b6d4)",borderRadius:99,transition:"width .4s"}}/></div></div>;
+const LT=({lang,set})=><div style={{display:"flex",gap:3,background:"rgba(255,255,255,.15)",borderRadius:20,padding:3}}>{["en","ms"].map(l=><button key={l} onClick={()=>set(l)} style={{padding:"4px 11px",borderRadius:16,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,background:lang===l?"#fff":"transparent",color:lang===l?"#0284c7":"rgba(255,255,255,.75)",transition:"all .2s"}}>{l==="en"?"EN":"BM"}</button>)}</div>;
+const FI=({lbl,ph,val,onChange,type="text",req,err})=><div style={{marginBottom:14}}><label style={{display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:5}}>{lbl}{req&&<span style={{color:"#ef4444",marginLeft:3}}>*</span>}</label><input type={type} placeholder={ph} value={val} onChange={e=>onChange(e.target.value)} style={{width:"100%",padding:"11px 14px",borderRadius:10,border:`1.5px solid ${err?"#ef4444":"#e2e8f0"}`,fontSize:13.5,outline:"none",boxSizing:"border-box",background:"#f8fafc",fontFamily:"inherit"}}/>{err&&<p style={{color:"#ef4444",fontSize:11,marginTop:4}}>{err}</p>}</div>;
+
+// ── Staff Dashboard ───────────────────────────────────────────────────────────
+function Dashboard({lang,onLogout}){
+  const t=T[lang];
+  const [cases,setCases]=useState(loadCases());
+  const [fil,setFil]=useState("all");
+  const [confirmDel,setConfirmDel]=useState(false);
+  const today=new Date().toDateString();
+  const shown=fil==="today"?cases.filter(c=>new Date(c.rawTime).toDateString()===today):cases;
+  const edN=shown.filter(c=>c.outcome==="ED").length;
+  const kkN=shown.filter(c=>c.outcome==="KK").length;
+  const doClear=()=>{if(confirmDel){nukeCases();setCases([]);setConfirmDel(false);}else setConfirmDel(true);};
+  const SC=(lbl,val,col,ico)=><div style={{background:`${col}0d`,border:`1.5px solid ${col}22`,borderRadius:14,padding:"12px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:2}}>{ico}</div><div style={{fontSize:24,fontWeight:900,color:col,fontFamily:"monospace"}}>{val}</div><div style={{fontSize:10,color:"#64748b",fontWeight:600,marginTop:2}}>{lbl}</div></div>;
+  return<div style={{animation:"fadeUp .4s ease"}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
+      <div><p style={{fontWeight:900,fontSize:16,color:"#0f172a",margin:0}}>{t.dashTitle}</p><p style={{fontSize:11,color:"#94a3b8",margin:"2px 0 0"}}>{fmtDate(new Date())} · {fmtTime(new Date())}</p></div>
+      <button onClick={onLogout} style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",borderRadius:10,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>{t.logout}</button>
+    </div>
+    <div style={{display:"flex",gap:8,marginBottom:16}}>{[["all",t.dAll],["today",t.dToday]].map(([v,lb])=><button key={v} onClick={()=>setFil(v)} style={{padding:"7px 16px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:fil===v?"#0284c7":"#f1f5f9",color:fil===v?"#fff":"#64748b",transition:"all .2s"}}>{lb}</button>)}</div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>{SC(t.dTotal,shown.length,"#0284c7","📋")}{SC(t.dED,edN,"#ef4444","🚨")}{SC(t.dKK,kkN,"#10b981","✅")}</div>
+    <div style={{display:"flex",gap:8,marginBottom:14}}>
+      <button onClick={()=>exportCSV(shown,t)} disabled={!shown.length} style={{flex:1,padding:"10px",borderRadius:10,border:"none",background:shown.length?"linear-gradient(135deg,#0ea5e9,#0284c7)":"#e2e8f0",color:shown.length?"#fff":"#94a3b8",fontSize:12,fontWeight:700,cursor:shown.length?"pointer":"not-allowed"}}>📊 {t.dExport}</button>
+      <button onClick={doClear} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${confirmDel?"#ef4444":"#e2e8f0"}`,background:confirmDel?"#fef2f2":"#f8fafc",color:confirmDel?"#dc2626":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}}>🗑 {confirmDel?t.dConfirm:t.dClear}</button>
+    </div>
+    {shown.length===0?<div style={{textAlign:"center",padding:"36px 20px",color:"#94a3b8"}}><div style={{fontSize:36,marginBottom:8}}>📭</div><p>{t.dNoData}</p></div>:
+    <div style={{display:"flex",flexDirection:"column",gap:8}}>{[...shown].reverse().map((c,i)=><div key={i} style={{background:c.outcome==="ED"?"#fef2f2":"#f0fdf4",border:`1px solid ${c.outcome==="ED"?"#fecaca":"#bbf7d0"}`,borderRadius:12,padding:"12px 14px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontWeight:800,fontSize:13,color:c.outcome==="ED"?"#dc2626":"#059669"}}>{c.outcome==="ED"?"🚨":"✅"} {c.outcome} {c.outcome==="KK"?`· ${c.ref}`:""}</span><span style={{fontSize:10,color:"#94a3b8",fontFamily:"monospace"}}>{c.time?.slice(0,17)}</span></div>
+      <p style={{fontSize:13,fontWeight:700,color:"#1e293b",margin:"0 0 2px"}}>{c.name} <span style={{fontWeight:400,color:"#64748b",fontSize:12}}>({c.gender}, {c.age!=="-"?`${c.age}y`:"-"})</span></p>
+      <p style={{fontSize:12,color:"#64748b",margin:"0 0 2px",fontFamily:"monospace"}}>IC: {c.ic} · 📞 {c.phone}</p>
+      <p style={{fontSize:11,color:"#94a3b8",margin:0}}>{c.arrival} · {c.reason}</p>
+    </div>)}</div>}
+  </div>;
+}
+
+// ── Main App ──────────────────────────────────────────────────────────────────
+function App(){
+  const [lang,setLang]=useState("en");
+  const [sc,setSc]=useState("welcome");
+  const [pdpaOk,setPdpaOk]=useState(false);
+  const [stepId,setStepId]=useState("service_type");
+  const [ans,setAns]=useState({});
+  const [multi,setMulti]=useState([]);
+  const [hist,setHist]=useState([]);
+  const [q,setQ]=useState(null);
+  const [ref,setRef]=useState(null);
+  const [edR,setEdR]=useState("");
+  const [kkR,setKkR]=useState("");
+  const [errs,setErrs]=useState({});
+  const [pin,setPin]=useState("");
+  const [pinErr,setPinErr]=useState(false);
+  const [pt,setPt]=useState({name:"",ic:"",phone:"",dob:"",gender:"",arrival:"",address:""});
+  const P=(k,v)=>setPt(p=>({...p,[k]:v}));
+
+  const t=T[lang];
+  const STEPS=getSteps(lang);
+  const si=STEPS.findIndex(s=>s.id===stepId);
+  const step=STEPS.find(s=>s.id===stepId);
+  const secCols={"Service":"#8b5cf6","Patient Info":"#0284c7","Medical History":"#f59e0b","Clinical Assessment":"#ef4444","Additional":"#0891b2"};
+  const secCol=secCols[step?.sec]||"#0284c7";
+  const secLbl=t.secs[step?.sec]||step?.sec||"";
+
+  const validIC=ic=>ic.replace(/\D/g,"").length===12;
+
+  const doRegNext=()=>{
+    const e={};
+    if(!pt.name.trim())e.name=lang==="en"?"Name is required":"Nama diperlukan";
+    if(!pt.ic.trim())e.ic=lang==="en"?"IC required":"No. IC diperlukan";
+    else if(!validIC(pt.ic))e.ic=t.icErr;
+    if(!pt.phone.trim())e.phone=lang==="en"?"Contact required":"Nombor telefon diperlukan";
+    if(!pt.gender)e.gender=lang==="en"?"Select gender":"Sila pilih jantina";
+    if(Object.keys(e).length){setErrs(e);return;}
+    setErrs({});setSc("questions");
+  };
+
+  const rec=(outcome,extra={})=>{
+    const now=new Date();
+    addCase({rawTime:now.toISOString(),time:`${fmtDate(now)} ${fmtTime(now)}`,
+      name:pt.name,ic:pt.ic,phone:pt.phone,gender:pt.gender,age:calcAge(pt.dob),
+      arrival:pt.arrival||"-",address:pt.address,pdpa:"Yes",outcome,
+      comorbid:Array.isArray(ans.comorbid_list)?ans.comorbid_list.join(", "):"-",
+      allergy:ans.allergy||"-",duration:ans.duration||"-",prior:ans.prior||"-",...extra});
+  };
+
+  const goED=r=>{const qi=genQ();setQ(qi);setEdR(r);rec("ED",{ref:qi.num,reason:r});setSc("ed");};
+  const goKK=r=>{const rf=genRef();setRef(rf);setKkR(r||t.kkDef);rec("KK",{ref:rf,reason:r||t.kkDef});setSc("kk");};
+
+  const doSingle=o=>{
+    setAns({...ans,[step.id]:o.val});setHist([...hist,stepId]);
+    if(o.ed)return goED(o.edR);
+    if(o.kk)return goKK(o.kkR);
+    if(o.next==="result")return goKK(t.kkDef);
+    if(o.next)setStepId(o.next);
+  };
+  const doMulti=()=>{
+    if(!multi.length)return;
+    setAns({...ans,[step.id]:multi});setHist([...hist,stepId]);setMulti([]);
+    if(step.next==="result")return goKK(t.kkDef);
+    if(step.next)setStepId(step.next);
+  };
+  const goBack=()=>{
+    if(sc==="questions"&&!hist.length){setSc("register");return;}
+    if(!hist.length)return;
+    const prev=hist[hist.length-1];setHist(hist.slice(0,-1));setStepId(prev);setMulti([]);
+  };
+  const restart=()=>{setSc("welcome");setStepId("service_type");setAns({});setMulti([]);setHist([]);setQ(null);setRef(null);setEdR("");setKkR("");setPdpaOk(false);setErrs({});setPt({name:"",ic:"",phone:"",dob:"",gender:"",arrival:"",address:""});};
+  const doPin=()=>{if(pin===STAFF_PIN){setPinErr(false);setPin("");setSc("staffDash");}else{setPinErr(true);setPin("");}};
+
+  const HDR=()=><div className="hdr">
+    <div style={{width:38,height:38,background:"rgba(255,255,255,.18)",borderRadius:11,display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,flexShrink:0}}>🏥</div>
+    <div style={{flex:1}}>
+      <p style={{color:"rgba(255,255,255,.6)",fontSize:8,letterSpacing:2.5,margin:0,textTransform:"uppercase"}}>{t.tag}</p>
+      <p style={{color:"#fff",fontSize:12.5,fontWeight:800,margin:0}}>{t.title}</p>
+    </div>
+    <div style={{display:"flex",gap:7,alignItems:"center",flexShrink:0}}>
+      <LT lang={lang} set={setLang}/>
+      {(sc==="questions"||sc==="register"||sc==="pdpa")&&<button onClick={restart} style={{background:"rgba(255,255,255,.18)",border:"none",color:"#fff",borderRadius:8,padding:"5px 10px",fontSize:11,cursor:"pointer"}}>{t.exit}</button>}
+    </div>
+  </div>;
+
+  return<div style={{width:"100%",display:"flex",flexDirection:"column",alignItems:"center"}}>
+    <div className="card">
+      <HDR/>
+      <div className="body">
+
+      {/* WELCOME */}
+      {sc==="welcome"&&<div style={{textAlign:"center",animation:"fadeUp .5s ease"}}>
+        <div style={{fontSize:54,marginBottom:12,animation:"pulse 2.4s infinite"}}>🩺</div>
+        <h1 style={{fontSize:21,fontWeight:900,color:"#0f172a",marginBottom:6}}>{t.wTitle}</h1>
+        <p style={{color:"#475569",fontSize:12.5,lineHeight:1.65,marginBottom:6}}>{t.wSub}</p>
+        <p style={{color:"#64748b",fontSize:12,marginBottom:20}}>{t.wDesc}</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:20}}>
+          {[{i:"🔏",l:t.f1l,s:t.f1s},{i:"📋",l:t.f2l,s:t.f2s},{i:"📊",l:t.f3l,s:t.f3s},{i:"📄",l:t.f4l,s:t.f4s}].map((x,idx)=>
+            <div key={idx} style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:13,padding:"12px 9px"}}>
+              <div style={{fontSize:20,marginBottom:3}}>{x.i}</div>
+              <div style={{fontWeight:700,fontSize:11.5,color:"#1e293b"}}>{x.l}</div>
+              <div style={{fontSize:10.5,color:"#94a3b8"}}>{x.s}</div>
+            </div>
+          )}
+        </div>
+        <button className="cta" onClick={()=>setSc("pdpa")} style={{width:"100%",padding:"16px",borderRadius:15,background:"linear-gradient(135deg,#0ea5e9,#0284c7)",color:"#fff",fontSize:14.5,fontWeight:800,boxShadow:"0 8px 24px rgba(14,165,233,.38)",marginBottom:10}}>{t.startBtn}</button>
+        <button onClick={()=>setSc("staffPin")} style={{width:"100%",padding:"11px",borderRadius:12,border:"1px solid #e2e8f0",background:"transparent",color:"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{t.staffBtn}</button>
+        <p style={{color:"#94a3b8",fontSize:10.5,marginTop:10}}>{t.emergency}</p>
+      </div>}
+
+      {/* PDPA */}
+      {sc==="pdpa"&&<div style={{animation:"fadeUp .4s ease"}}>
+        <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:16}}>
+          <div style={{width:38,height:38,background:"#fef3c7",borderRadius:11,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🔏</div>
+          <div><p style={{fontWeight:900,fontSize:15,color:"#0f172a",margin:0}}>{t.pdpaTitle}</p><p style={{fontSize:11,color:"#94a3b8",margin:0}}>{t.pdpaSub}</p></div>
+        </div>
+        <div style={{background:"linear-gradient(135deg,#fefce8,#fef9c3)",border:"1.5px solid #fde047",borderRadius:13,padding:"12px 14px",marginBottom:14,display:"flex",gap:9,alignItems:"flex-start"}}>
+          <span style={{fontSize:18,flexShrink:0}}>⚖️</span>
+          <p style={{fontSize:11.5,color:"#713f12",margin:0,lineHeight:1.6,fontWeight:600}}>Personal Data Protection Act 2010 (Act 709) · Kementerian Kesihatan Malaysia</p>
+        </div>
+        <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:13,padding:"14px",marginBottom:14}}>
+          {t.pdpaPoints.map((pt,i)=><div key={i} style={{display:"flex",gap:9,marginBottom:i<t.pdpaPoints.length-1?10:0}}>
+            <span style={{width:20,height:20,background:"#dbeafe",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#0284c7",flexShrink:0}}>{i+1}</span>
+            <p style={{fontSize:12,color:"#374151",margin:0,lineHeight:1.6}}>{pt}</p>
+          </div>)}
+        </div>
+        <div onClick={()=>setPdpaOk(!pdpaOk)} style={{display:"flex",gap:11,alignItems:"flex-start",padding:"13px",background:pdpaOk?"#f0fdf4":"#f8fafc",border:`2px solid ${pdpaOk?"#10b981":"#e2e8f0"}`,borderRadius:12,cursor:"pointer",marginBottom:14,transition:"all .2s"}}>
+          <div style={{width:22,height:22,borderRadius:6,flexShrink:0,border:`2px solid ${pdpaOk?"#10b981":"#cbd5e1"}`,background:pdpaOk?"#10b981":"#fff",display:"flex",alignItems:"center",justifyContent:"center",marginTop:1}}>
+            {pdpaOk&&<span style={{color:"#fff",fontSize:13,lineHeight:1}}>✓</span>}
+          </div>
+          <p style={{fontSize:12,color:pdpaOk?"#065f46":"#374151",fontWeight:600,margin:0,lineHeight:1.6}}>{t.pdpaChk}</p>
+        </div>
+        <button className="cta" onClick={()=>{if(pdpaOk)setSc("register");}} style={{width:"100%",padding:"15px",borderRadius:14,background:pdpaOk?"linear-gradient(135deg,#10b981,#059669)":"#e2e8f0",color:pdpaOk?"#fff":"#94a3b8",fontSize:14,fontWeight:800,boxShadow:pdpaOk?"0 8px 24px rgba(16,185,129,.35)":"none",transition:"all .3s",marginBottom:10}}>{t.pdpaBtn}</button>
+        <p style={{fontSize:11,color:"#94a3b8",textAlign:"center"}}>{t.pdpaNo}</p>
+      </div>}
+
+      {/* REGISTER */}
+      {sc==="register"&&<div style={{animation:"fadeUp .4s ease"}}>
+        <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:16}}>
+          <div style={{width:34,height:34,background:"#eff6ff",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17}}>🪪</div>
+          <div style={{flex:1}}><p style={{fontWeight:800,fontSize:14,color:"#0f172a",margin:0}}>{t.regTitle}</p><p style={{fontSize:11,color:"#94a3b8",margin:0}}>{t.regSub}</p></div>
+          <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:8,padding:"3px 9px"}}><span style={{fontSize:10,color:"#059669",fontWeight:700}}>✓ PDPA</span></div>
+        </div>
+        <FI lbl={t.fName} ph={t.pName} val={pt.name} onChange={v=>P("name",v)} req err={errs.name}/>
+        <FI lbl={t.fIC} ph={t.pIC} val={pt.ic} onChange={v=>P("ic",v)} req err={errs.ic}/>
+        <FI lbl={t.fPhone} ph={t.pPhone} val={pt.phone} onChange={v=>P("phone",v)} type="tel" req err={errs.phone}/>
+        <FI lbl={t.fDOB} val={pt.dob} onChange={v=>P("dob",v)} type="date"/>
+        <div style={{marginBottom:14}}>
+          <label style={{display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:7}}>{t.fGender}<span style={{color:"#ef4444",marginLeft:3}}>*</span></label>
+          <div style={{display:"flex",gap:9}}>
+            {[{v:"male",l:t.male,i:"👨"},{v:"female",l:t.female,i:"👩"}].map(g=>
+              <div key={g.v} onClick={()=>P("gender",g.v)} style={{flex:1,padding:"11px",borderRadius:12,border:`2px solid ${pt.gender===g.v?"#0284c7":"#e2e8f0"}`,background:pt.gender===g.v?"#eff6ff":"#f8fafc",textAlign:"center",cursor:"pointer",transition:"all .15s"}}>
+                <div style={{fontSize:20,marginBottom:3}}>{g.i}</div>
+                <div style={{fontSize:12.5,fontWeight:700,color:pt.gender===g.v?"#0369a1":"#374151"}}>{g.l}</div>
+              </div>
+            )}
+          </div>
+          {errs.gender&&<p style={{color:"#ef4444",fontSize:11,marginTop:4}}>{errs.gender}</p>}
+        </div>
+        <div style={{marginBottom:14}}>
+          <label style={{display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:7}}>{t.fArrival}</label>
+          <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+            {t.arrivals.map((a,i)=><div key={i} onClick={()=>P("arrival",a)} style={{padding:"7px 12px",borderRadius:20,border:`1.5px solid ${pt.arrival===a?"#0284c7":"#e2e8f0"}`,background:pt.arrival===a?"#eff6ff":"#f8fafc",cursor:"pointer",fontSize:12,fontWeight:600,color:pt.arrival===a?"#0369a1":"#374151",transition:"all .15s"}}>{a}</div>)}
+          </div>
+        </div>
+        <FI lbl={t.fAddr} ph={t.pAddr} val={pt.address} onChange={v=>P("address",v)}/>
+        <button className="cta" onClick={doRegNext} style={{width:"100%",padding:"15px",borderRadius:14,background:"linear-gradient(135deg,#0ea5e9,#0284c7)",color:"#fff",fontSize:14,fontWeight:800,boxShadow:"0 8px 24px rgba(14,165,233,.35)"}}>{t.nextBtn}</button>
+      </div>}
+
+      {/* QUESTIONS */}
+      {sc==="questions"&&step&&<div style={{animation:"fadeUp .28s ease"}}>
+        <Bar done={si+1} tot={STEPS.length} t={t}/>
+        <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:13,flexWrap:"wrap"}}>
+          <Pill lbl={secLbl} col={secCol}/>
+          <Src s={step.src}/>
+          <button onClick={goBack} style={{marginLeft:"auto",background:"#f1f5f9",border:"none",borderRadius:8,padding:"4px 11px",fontSize:12,color:"#64748b",cursor:"pointer"}}>{t.back}</button>
+        </div>
+        <div style={{background:`linear-gradient(135deg,${secCol}0d,${secCol}05)`,border:`1.5px solid ${secCol}22`,borderRadius:15,padding:"16px 16px 12px",marginBottom:16}}>
+          <p style={{fontSize:15,fontWeight:700,color:"#0f172a",margin:0,lineHeight:1.45}}>{step.q}</p>
+          {step.hint&&<p style={{fontSize:11,color:"#94a3b8",margin:"5px 0 0",fontStyle:"italic"}}>{step.hint}</p>}
+        </div>
+        {step.type==="single"&&<div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {step.opts.map((o,i)=>{const isR=o.ed,isG=o.kk;return<button key={i} className="opt-btn" onClick={()=>doSingle(o)} style={{border:`2px solid ${isR?"#fca5a5":isG?"#6ee7b7":"#e2e8f0"}`,background:isR?"#fef2f2":isG?"#f0fdf4":"#f8fafc"}}>
+            <span style={{width:27,height:27,borderRadius:8,flexShrink:0,background:isR?"#fee2e2":isG?"#d1fae5":"#f1f5f9",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:isR?"#ef4444":isG?"#059669":"#64748b"}}>{String.fromCharCode(65+i)}</span>
+            <span style={{fontSize:13,fontWeight:600,color:isR?"#991b1b":isG?"#065f46":"#1e293b",lineHeight:1.4,flex:1}}>{o.lbl}</span>
+            {isR&&<span style={{fontSize:14,flexShrink:0}}>🚨</span>}
+            {isG&&<span style={{fontSize:14,flexShrink:0}}>✅</span>}
+          </button>;})}
+        </div>}
+        {step.type==="multi"&&<>
+          <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:12}}>
+            {step.opts.map((o,i)=>{const sel=multi.includes(o.val);return<div key={i} className="multi-opt" onClick={()=>setMulti(sel?multi.filter(v=>v!==o.val):[...multi,o.val])} style={{border:`2px solid ${sel?"#0284c7":"#e2e8f0"}`,background:sel?"#eff6ff":"#f8fafc"}}>
+              <div style={{width:21,height:21,borderRadius:6,flexShrink:0,border:`2px solid ${sel?"#0284c7":"#cbd5e1"}`,background:sel?"#0284c7":"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}>{sel&&<span style={{color:"#fff",fontSize:12,lineHeight:1}}>✓</span>}</div>
+              <span style={{fontSize:13,fontWeight:600,color:sel?"#0369a1":"#1e293b"}}>{o.lbl}</span>
+            </div>;})}
+          </div>
+          <button onClick={doMulti} disabled={!multi.length} style={{width:"100%",padding:"14px",borderRadius:13,border:"none",background:multi.length?"linear-gradient(135deg,#0ea5e9,#0284c7)":"#e2e8f0",color:multi.length?"#fff":"#94a3b8",fontSize:14,fontWeight:700,cursor:multi.length?"pointer":"not-allowed",transition:"all .2s"}}>{t.confirm}</button>
+        </>}
+      </div>}
+
+      {/* ED */}
+      {sc==="ed"&&<div style={{textAlign:"center",animation:"popIn .45s ease"}}>
+        <div style={{width:72,height:72,borderRadius:"50%",background:"linear-gradient(135deg,#ef4444,#dc2626)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",fontSize:32,boxShadow:"0 8px 32px rgba(239,68,68,.38)"}}>🚨</div>
+        <h2 style={{fontSize:19,fontWeight:900,color:"#0f172a",marginBottom:4}}>{t.edTitle}</h2>
+        {pt.name&&<p style={{color:"#0284c7",fontWeight:700,fontSize:13,marginBottom:4}}>{t.ptLbl}: {pt.name}</p>}
+        <p style={{color:"#64748b",fontSize:12.5,marginBottom:18,lineHeight:1.55}}>{edR}</p>
+        <div style={{background:"linear-gradient(135deg,#1e293b,#0f172a)",borderRadius:20,padding:"22px 18px",marginBottom:14,boxShadow:"0 20px 60px rgba(0,0,0,.28)"}}>
+          <p style={{color:"#64748b",fontSize:10,letterSpacing:3,textTransform:"uppercase",marginBottom:4}}>{t.qLbl}</p>
+          <div style={{fontSize:50,fontWeight:900,color:"#fff",fontFamily:"monospace",letterSpacing:5,textShadow:"0 0 30px rgba(14,165,233,.55)"}}>{q?.num}</div>
+          <div style={{marginTop:8,padding:"4px 13px",background:"rgba(14,165,233,.15)",borderRadius:99,display:"inline-block"}}><span style={{color:"#38bdf8",fontSize:11,fontWeight:600}}>{t.regAt} {q&&fmtTime(q.time)}</span></div>
+          {pt.ic&&<p style={{color:"#475569",fontSize:10.5,marginTop:5,fontFamily:"monospace"}}>IC: {pt.ic}</p>}
+        </div>
+        <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:13,padding:"13px 15px",textAlign:"left",marginBottom:10}}>
+          <p style={{fontWeight:700,color:"#dc2626",marginBottom:6,fontSize:12.5}}>{t.iTitle}</p>
+          <ul style={{margin:0,paddingLeft:16,color:"#7f1d1d",fontSize:12,lineHeight:1.8}}>{t.iList.map((x,i)=><li key={i}>{x}</li>)}</ul>
+        </div>
+        <div style={{background:"#fffbeb",border:"1px solid #fcd34d",borderRadius:10,padding:"10px 13px",marginBottom:9}}><p style={{color:"#92400e",fontSize:11,margin:0}}>{t.abscond}</p></div>
+        <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:"9px 13px",marginBottom:13}}><p style={{color:"#166534",fontSize:11,margin:0}}>{t.analytic}</p></div>
+        <button onClick={restart} style={{width:"100%",padding:"11px",borderRadius:11,background:"transparent",border:"1px solid #e2e8f0",color:"#64748b",cursor:"pointer",fontSize:12.5}}>{t.newAss}</button>
+      </div>}
+
+      {/* KK */}
+      {sc==="kk"&&<div style={{textAlign:"center",animation:"popIn .45s ease"}}>
+        <div style={{width:72,height:72,borderRadius:"50%",background:"linear-gradient(135deg,#10b981,#059669)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",fontSize:32,boxShadow:"0 8px 32px rgba(16,185,129,.38)"}}>✅</div>
+        <h2 style={{fontSize:19,fontWeight:900,color:"#0f172a",marginBottom:4}}>{t.kkTitle}</h2>
+        {pt.name&&<p style={{color:"#059669",fontWeight:700,fontSize:13,marginBottom:4}}>{t.ptLbl}: {pt.name}</p>}
+        <p style={{color:"#64748b",fontSize:12.5,marginBottom:18,lineHeight:1.55}}>{kkR}</p>
+        <div style={{background:"linear-gradient(135deg,#ecfdf5,#d1fae5)",border:"2px solid #6ee7b7",borderRadius:17,padding:"16px",marginBottom:13,textAlign:"left"}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:7}}><span style={{fontSize:9,color:"#059669",fontWeight:800,letterSpacing:2,textTransform:"uppercase"}}>{t.refCert}</span><span style={{fontSize:9,color:"#059669",fontFamily:"monospace",fontWeight:700}}>{ref}</span></div>
+          <p style={{color:"#065f46",fontWeight:700,fontSize:13,marginBottom:4}}>{t.kkInstr}</p>
+          <p style={{color:"#047857",fontSize:11.5,margin:"0 0 5px",lineHeight:1.6}}>{t.kkValid}</p>
+          {pt.ic&&<p style={{color:"#6ee7b7",fontSize:10.5,margin:0,fontFamily:"monospace"}}>IC: {pt.ic} · 📞 {pt.phone}</p>}
+        </div>
+        <button className="cta" onClick={()=>dlCert(pt,ans,ref,STEPS,lang)} style={{width:"100%",padding:"14px",borderRadius:13,background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:13.5,fontWeight:800,boxShadow:"0 8px 24px rgba(16,185,129,.36)",marginBottom:10}}>{t.dlBtn}</button>
+        <div style={{background:"#fffbeb",border:"1px solid #fcd34d",borderRadius:11,padding:"11px 14px",textAlign:"left",marginBottom:9}}>
+          <p style={{fontWeight:700,color:"#92400e",fontSize:12,marginBottom:4}}>{t.warnTitle}</p>
+          <p style={{color:"#78350f",fontSize:11.5,margin:0,lineHeight:1.7}}>{t.warnBody}</p>
+        </div>
+        <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:"9px 13px",marginBottom:13}}><p style={{color:"#166534",fontSize:11,margin:0}}>{t.analytic}</p></div>
+        <button onClick={restart} style={{width:"100%",padding:"11px",borderRadius:11,background:"transparent",border:"1px solid #e2e8f0",color:"#64748b",cursor:"pointer",fontSize:12.5}}>{t.newAss}</button>
+      </div>}
+
+      {/* STAFF PIN */}
+      {sc==="staffPin"&&<div style={{textAlign:"center",animation:"fadeUp .4s ease"}}>
+        <div style={{width:60,height:60,borderRadius:"50%",background:"linear-gradient(135deg,#1e293b,#0f172a)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",fontSize:26}}>🔐</div>
+        <h2 style={{fontSize:17,fontWeight:900,color:"#0f172a",marginBottom:4}}>{t.pinTitle}</h2>
+        <p style={{color:"#64748b",fontSize:12,marginBottom:20}}>{t.pinSub}</p>
+        <div style={{marginBottom:13}}>
+          <label style={{display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:6}}>{t.pinLbl}</label>
+          <input type="password" placeholder={t.pinPH} value={pin} onChange={e=>setPin(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doPin()} style={{width:"100%",padding:"13px",borderRadius:11,border:`2px solid ${pinErr?"#ef4444":"#e2e8f0"}`,fontSize:18,textAlign:"center",letterSpacing:8,outline:"none",boxSizing:"border-box",fontFamily:"monospace"}}/>
+          {pinErr&&<p style={{color:"#ef4444",fontSize:12,marginTop:5}}>{t.pinErr}</p>}
+        </div>
+        <button className="cta" onClick={doPin} style={{width:"100%",padding:"14px",borderRadius:13,background:"linear-gradient(135deg,#1e293b,#0f172a)",color:"#fff",fontSize:14,fontWeight:800,marginBottom:10}}>{t.pinBtn}</button>
+        <button onClick={()=>setSc("welcome")} style={{width:"100%",padding:"10px",borderRadius:11,border:"1px solid #e2e8f0",background:"transparent",color:"#64748b",fontSize:12,cursor:"pointer"}}>{t.back}</button>
+      </div>}
+
+      {/* STAFF DASH */}
+      {sc==="staffDash"&&<Dashboard lang={lang} onLogout={()=>setSc("welcome")}/>}
+
+      </div>
+    </div>
+    <p className="attribution">Adapted from i-CEMAS · icemas.hmelaka.moh.gov.my · JKN Melaka / KKM</p>
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
