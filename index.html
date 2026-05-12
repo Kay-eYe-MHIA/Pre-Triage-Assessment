@@ -73,10 +73,9 @@ en:{
   fAddr:"Address / Area",pAddr:"Taman, Daerah, Negeri",
   nextBtn:"Next: Clinical Questions →",
   edTitle:"Emergency Department Required",
-  qLbl:"Your Queue Number",regAt:"Registered at",
   ptLbl:"Patient",
-  iTitle:"📋 Instructions:",
-  iList:["Show this screen at ED Registration Counter","Your number will appear on the waiting board","Do NOT leave the ED waiting area","Tell staff immediately if condition worsens"],
+  iTitle:"📋 What to do next:",
+  iList:["Proceed to the Triage Counter to get your queue number","Inform the triage nurse of your chief complaint","Do NOT leave the ED waiting area","Tell staff immediately if condition worsens"],
   abscond:"⚠️ If patient leaves without being seen, staff will follow up using registered contact details.",
   newAss:"← New Assessment",
   kkTitle:"Suitable for Klinik Kesihatan",
@@ -132,10 +131,9 @@ ms:{
   fAddr:"Alamat / Kawasan",pAddr:"Taman, Daerah, Negeri",
   nextBtn:"Seterusnya: Soalan Klinikal →",
   edTitle:"Jabatan Kecemasan Diperlukan",
-  qLbl:"Nombor Giliran Anda",regAt:"Didaftarkan pada",
   ptLbl:"Pesakit",
-  iTitle:"📋 Arahan:",
-  iList:["Tunjukkan skrin ini di Kaunter Pendaftaran JK","Nombor anda akan dipanggil pada papan menunggu","JANGAN tinggalkan kawasan menunggu JK","Maklumkan kakitangan segera jika keadaan memburuk"],
+  iTitle:"📋 Langkah seterusnya:",
+  iList:["Pergi ke Kaunter Triaj untuk mendapatkan nombor giliran anda","Maklumkan kepada jururawat triaj tentang aduan utama anda","JANGAN tinggalkan kawasan menunggu JK","Maklumkan kakitangan segera jika keadaan memburuk"],
   abscond:"⚠️ Jika pesakit meninggalkan hospital tanpa diperiksa, kakitangan akan menghubungi menggunakan maklumat yang didaftarkan.",
   newAss:"← Penilaian Baharu",
   kkTitle:"Sesuai untuk Klinik Kesihatan",
@@ -445,7 +443,7 @@ function App(){
     setTimeout(()=>{document.body.removeChild(form);},3000);
   };
 
-  const goED=r=>{const qi=genQ();setQ(qi);setEdR(r);rec("ED",{ref:qi.num,reason:r});setSc("ed");};
+  const goED=r=>{setEdR(r);rec("ED",{ref:`ED-${new Date().toISOString().slice(0,19).replace('T',' ')}`,reason:r});setSc("ed");};
   const goKK=r=>{const rf=genRef();setRef(rf);setKkR(r||t.kkDef);rec("KK",{ref:rf,reason:r||t.kkDef});setSc("kk");};
 
   const doSingle=o=>{
@@ -602,11 +600,22 @@ function App(){
         <h2 style={{fontSize:19,fontWeight:900,color:"#0f172a",marginBottom:4}}>{t.edTitle}</h2>
         {pt.name&&<p style={{color:"#0284c7",fontWeight:700,fontSize:13,marginBottom:4}}>{t.ptLbl}: {pt.name}</p>}
         <p style={{color:"#64748b",fontSize:12.5,marginBottom:18,lineHeight:1.55}}>{edR}</p>
-        <div style={{background:"linear-gradient(135deg,#1e293b,#0f172a)",borderRadius:20,padding:"22px 18px",marginBottom:14,boxShadow:"0 20px 60px rgba(0,0,0,.28)"}}>
-          <p style={{color:"#64748b",fontSize:10,letterSpacing:3,textTransform:"uppercase",marginBottom:4}}>{t.qLbl}</p>
-          <div style={{fontSize:50,fontWeight:900,color:"#fff",fontFamily:"monospace",letterSpacing:5,textShadow:"0 0 30px rgba(14,165,233,.55)"}}>{q?.num}</div>
-          <div style={{marginTop:8,padding:"4px 13px",background:"rgba(14,165,233,.15)",borderRadius:99,display:"inline-block"}}><span style={{color:"#38bdf8",fontSize:11,fontWeight:600}}>{t.regAt} {q&&fmtTime(q.time)}</span></div>
-          {pt.ic&&<p style={{color:"#475569",fontSize:10.5,marginTop:5,fontFamily:"monospace"}}>IC: {pt.ic}</p>}
+        <div style={{background:"linear-gradient(135deg,#1e293b,#0f172a)",borderRadius:20,padding:"28px 20px",marginBottom:14,boxShadow:"0 20px 60px rgba(0,0,0,.28)",textAlign:"center"}}>
+          <div style={{fontSize:44,marginBottom:12}}>🪧</div>
+          <p style={{color:"#94a3b8",fontSize:11,letterSpacing:2,textTransform:"uppercase",marginBottom:10}}>
+            {lang==="en"?"Next Step":"Langkah Seterusnya"}
+          </p>
+          <p style={{color:"#ffffff",fontSize:17,fontWeight:900,lineHeight:1.4,marginBottom:8}}>
+            {lang==="en"
+              ?"Please proceed to the Triage Counter to get your Queue Number"
+              :"Sila pergi ke Kaunter Triaj untuk mendapatkan Nombor Giliran anda"}
+          </p>
+          <div style={{marginTop:12,padding:"8px 16px",background:"rgba(14,165,233,.15)",borderRadius:10,display:"inline-block"}}>
+            <span style={{color:"#38bdf8",fontSize:12,fontWeight:700}}>
+              {lang==="en"?"🏥 Triage Counter — ED Registration":"🏥 Kaunter Triaj — Pendaftaran JK"}
+            </span>
+          </div>
+          {pt.ic&&<p style={{color:"#475569",fontSize:10.5,marginTop:10,fontFamily:"monospace"}}>IC: {pt.ic} · 📞 {pt.phone}</p>}
         </div>
         <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:13,padding:"13px 15px",textAlign:"left",marginBottom:10}}>
           <p style={{fontWeight:700,color:"#dc2626",marginBottom:6,fontSize:12.5}}>{t.iTitle}</p>
