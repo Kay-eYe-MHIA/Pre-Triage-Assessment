@@ -646,6 +646,277 @@ function App(){
           <p style={{fontWeight:700,color:"#92400e",fontSize:12,marginBottom:4}}>{t.warnTitle}</p>
           <p style={{color:"#78350f",fontSize:11.5,margin:0,lineHeight:1.7}}>{t.warnBody}</p>
         </div>
+
+        {/* ── CLINIC FINDER ── */}
+        {(()=>{
+          const now = new Date();
+          const day = now.getDay(); // 0=Sun,1=Mon,...,6=Sat
+          const hour = now.getHours();
+          const min = now.getMinutes();
+          const t24 = hour*60+min;
+
+          const isOpen = (schedule) => {
+            const {days, open, close} = schedule;
+            if(!days.includes(day)) return false;
+            if(open===0 && close===1440) return true; // 24hr
+            return t24 >= open && t24 < close;
+          };
+
+          const clinics = [
+            {
+              id:"ucc",
+              name: lang==="en"?"Urgent Care Centre (UCC) HKL":"Klinik Penjagaan Urgent (UCC) HKL",
+              type:"ucc",
+              badge: lang==="en"?"Nearest · Within HKL":"Terdekat · Dalam HKL",
+              badgeCol:"#1d4ed8",
+              addr: lang==="en"?"ED HKL Compound, Jalan Pahang, KL":"Kawasan ED HKL, Jalan Pahang, KL",
+              hours: lang==="en"?"Mon–Fri: 6pm–9pm · Sat–Sun: 2pm–11pm":"Isnin–Jumaat: 6ptg–9mlm · Sabtu–Ahad: 2ptg–11mlm",
+              phone:null, tel:null,
+              maps:"3.1710221,101.7037332",
+              rating:null, fee: lang==="en"?"Subsidised (MOH)":"Bersubsidi (MOH)",
+              schedules:[
+                {days:[1,2,3,4,5],open:18*60,close:21*60},
+                {days:[0,6],open:14*60,close:23*60},
+              ],
+            },
+            {
+              id:"kkkl",
+              name:"Klinik Kesihatan Kuala Lumpur",
+              type:"kk",
+              badge:lang==="en"?"Government · KK":"Kerajaan · KK",
+              badgeCol:"#059669",
+              addr:"Jalan Temerloh, Titiwangsa, KL",
+              hours:lang==="en"?"Mon–Fri: 8am–5pm · Sat–Sun: 9am–1pm":"Isnin–Jumaat: 8pg–5ptg · Sabtu–Ahad: 9pg–1ptg",
+              phone:"03-2618 3200", tel:"+60326183200",
+              maps:"3.1734869,101.7089451",
+              rating:"3.4★", fee:lang==="en"?"Subsidised (MOH)":"Bersubsidi (MOH)",
+              schedules:[
+                {days:[1,2,3,4,5],open:8*60,close:17*60},
+                {days:[0,6],open:9*60,close:13*60},
+              ],
+            },
+            {
+              id:"kksentul",
+              name:"Klinik Kesihatan Sentul",
+              type:"kk",
+              badge:lang==="en"?"Government · KK":"Kerajaan · KK",
+              badgeCol:"#059669",
+              addr:"Jalan 3/48A, Bandar Baru Sentul, KL",
+              hours:lang==="en"?"Mon–Fri: 8am–5pm · Weekends: Closed":"Isnin–Jumaat: 8pg–5ptg · Hujung minggu: Tutup",
+              phone:"03-4042 7557", tel:"+60340427557",
+              maps:"3.1807277,101.6975293",
+              rating:"2.6★", fee:lang==="en"?"Subsidised (MOH)":"Bersubsidi (MOH)",
+              schedules:[
+                {days:[1,2,3,4,5],open:8*60,close:17*60},
+              ],
+            },
+            {
+              id:"qualitas",
+              name:"Qualitas Health Klinik Reddy",
+              type:"gp",
+              badge:lang==="en"?"Private GP · 24 Hours":"Swasta GP · 24 Jam",
+              badgeCol:"#7c3aed",
+              addr:"No 91G, Jalan Sultan Azlan Shah, KL",
+              hours:lang==="en"?"Open 24 Hours":"Buka 24 Jam",
+              phone:"03-4041 2611", tel:"+60340412611",
+              maps:"3.1696546,101.6956003",
+              rating:"4.3★", fee:lang==="en"?"Private rate":"Kadar swasta",
+              schedules:[{days:[0,1,2,3,4,5,6],open:0,close:1440}],
+            },
+            {
+              id:"drprevents",
+              name:"Klinik Dr.Prevents 24 Jam",
+              type:"gp",
+              badge:lang==="en"?"Private GP · 24 Hours":"Swasta GP · 24 Jam",
+              badgeCol:"#7c3aed",
+              addr:"A-2-8 Viva, Jalan Ipoh, KL",
+              hours:lang==="en"?"Open 24 Hours":"Buka 24 Jam",
+              phone:"019-454 7466", tel:"+60194547466",
+              maps:"3.1779518,101.6859540",
+              rating:"4.9★", fee:lang==="en"?"Private rate":"Kadar swasta",
+              schedules:[{days:[0,1,2,3,4,5,6],open:0,close:1440}],
+            },
+            {
+              id:"pusrawi_klinik",
+              name:"Klinik Pusrawi Jalan Ipoh",
+              type:"gp",
+              badge:lang==="en"?"Private GP":"Swasta GP",
+              badgeCol:"#7c3aed",
+              addr:"132-138 Wisma Baitulmal, Jalan Ipoh, KL",
+              hours:lang==="en"?"Mon–Sat: 8am–7pm · Sun: 8am–3pm":"Isnin–Sabtu: 8pg–7ptg · Ahad: 8pg–3ptg",
+              phone:"03-4040 0425", tel:"+60340400425",
+              maps:"3.1702624,101.6939603",
+              rating:"4.7★", fee:lang==="en"?"Private rate":"Kadar swasta",
+              schedules:[
+                {days:[1,2,3,4,5,6],open:8*60,close:19*60},
+                {days:[0],open:8*60,close:15*60},
+              ],
+            },
+            {
+              id:"sundram",
+              name:"Klinik Sundram",
+              type:"gp",
+              badge:lang==="en"?"Private GP":"Swasta GP",
+              badgeCol:"#7c3aed",
+              addr:"141, Jalan Sultan Azlan Shah, KL",
+              hours:lang==="en"?"Daily: 9am–9pm":"Setiap hari: 9pg–9mlm",
+              phone:"03-4041 5039", tel:"+60340415039",
+              maps:"3.1708169,101.6940590",
+              rating:"4.3★", fee:lang==="en"?"Private rate":"Kadar swasta",
+              schedules:[{days:[0,1,2,3,4,5,6],open:9*60,close:21*60}],
+            },
+            {
+              id:"kpjsentosa",
+              name:"KPJ Sentosa KL Specialist",
+              type:"specialist",
+              badge:lang==="en"?"Specialist · 24 Hours":"Pakar · 24 Jam",
+              badgeCol:"#d97706",
+              addr:"36, Jalan Chemur, Titiwangsa, KL",
+              hours:lang==="en"?"Open 24 Hours":"Buka 24 Jam",
+              phone:"03-4043 7166", tel:"+60340437166",
+              maps:"3.1709313,101.6971677",
+              rating:"4.8★", fee:lang==="en"?"Private rate":"Kadar swasta",
+              schedules:[{days:[0,1,2,3,4,5,6],open:0,close:1440}],
+            },
+            {
+              id:"tawakkal",
+              name:"KPJ Tawakkal Specialist",
+              type:"specialist",
+              badge:lang==="en"?"Specialist · 24 Hours":"Pakar · 24 Jam",
+              badgeCol:"#d97706",
+              addr:"1, Jalan Pahang Barat, Pekeliling, KL",
+              hours:lang==="en"?"Open 24 Hours":"Buka 24 Jam",
+              phone:"03-4026 7777", tel:"+60340267777",
+              maps:"3.1769513,101.6986424",
+              rating:"4.7★", fee:lang==="en"?"Private rate":"Kadar swasta",
+              schedules:[{days:[0,1,2,3,4,5,6],open:0,close:1440}],
+            },
+            {
+              id:"pusrawi",
+              name:"Hospital Pakar Pusrawi KL",
+              type:"specialist",
+              badge:lang==="en"?"Specialist · 24 Hours":"Pakar · 24 Jam",
+              badgeCol:"#d97706",
+              addr:"Lot 149, Jalan Tun Razak, KL",
+              hours:lang==="en"?"Open 24 Hours":"Buka 24 Jam",
+              phone:"03-2687 5000", tel:"+60326875000",
+              maps:"3.1710388,101.7100502",
+              rating:"4.4★", fee:lang==="en"?"Private rate":"Kadar swasta",
+              schedules:[{days:[0,1,2,3,4,5,6],open:0,close:1440}],
+            },
+            {
+              id:"alislam",
+              name:"Al-Islam Specialist Hospital",
+              type:"specialist",
+              badge:lang==="en"?"Specialist · 24 Hours":"Pakar · 24 Jam",
+              badgeCol:"#d97706",
+              addr:"85, Jalan Raja Abdullah, Kampung Baru, KL",
+              hours:lang==="en"?"Open 24 Hours":"Buka 24 Jam",
+              phone:"03-2693 1007", tel:"+60326931007",
+              maps:"3.1635613,101.7032239",
+              rating:"4.5★", fee:lang==="en"?"Private rate":"Kadar swasta",
+              schedules:[{days:[0,1,2,3,4,5,6],open:0,close:1440}],
+            },
+          ];
+
+          const openNow = clinics.filter(c=>c.schedules.some(s=>isOpen(s)));
+          const closedNow = clinics.filter(c=>!c.schedules.some(s=>isOpen(s)));
+
+          const typeOrder = {ucc:0,kk:1,gp:2,specialist:3};
+          const sorted = [...openNow].sort((a,b)=>typeOrder[a.type]-typeOrder[b.type]);
+
+          const typeIcon = {ucc:"🏥",kk:"🏛️",gp:"🩺",specialist:"🏨"};
+
+          const ClinicCard = ({c, open}) => (
+            <div style={{background:"#fff",borderRadius:12,padding:"12px 13px",marginBottom:8,
+              border:`1.5px solid ${open ? (c.type==="ucc"?"#2563eb":c.type==="kk"?"#059669":c.type==="gp"?"#7c3aed":"#d97706") : "#e2e8f0"}`,
+              opacity: open ? 1 : 0.55}}>
+              <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:5,gap:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:7,flex:1}}>
+                  <span style={{fontSize:18,flexShrink:0}}>{typeIcon[c.type]}</span>
+                  <div>
+                    <p style={{fontWeight:800,fontSize:12,color:"#1e3a5f",margin:0,lineHeight:1.3}}>{c.name}</p>
+                    <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2,flexWrap:"wrap"}}>
+                      <span style={{background:`${c.badgeCol}18`,color:c.badgeCol,fontSize:9,fontWeight:700,padding:"1px 7px",borderRadius:99}}>
+                        {c.badge}
+                      </span>
+                      {c.rating && <span style={{fontSize:9,color:"#f59e0b",fontWeight:700}}>{c.rating}</span>}
+                      {c.fee && <span style={{fontSize:9,color:"#64748b"}}>{c.fee}</span>}
+                    </div>
+                  </div>
+                </div>
+                <div style={{flexShrink:0}}>
+                  {open
+                    ? <span style={{background:"#dcfce7",color:"#16a34a",fontSize:9,fontWeight:800,padding:"3px 8px",borderRadius:99,display:"block",textAlign:"center"}}>
+                        {lang==="en"?"🟢 OPEN":"🟢 BUKA"}
+                      </span>
+                    : <span style={{background:"#fee2e2",color:"#dc2626",fontSize:9,fontWeight:800,padding:"3px 8px",borderRadius:99,display:"block",textAlign:"center"}}>
+                        {lang==="en"?"🔴 CLOSED":"🔴 TUTUP"}
+                      </span>
+                  }
+                </div>
+              </div>
+              <p style={{fontSize:10.5,color:"#64748b",margin:"0 0 2px"}}>📍 {c.addr}</p>
+              <p style={{fontSize:10.5,color:"#64748b",margin:"0 0 6px"}}>⏰ {c.hours}</p>
+              {open && (
+                <div style={{display:"flex",gap:6}}>
+                  {c.tel && <a href={`tel:${c.tel}`} style={{flex:1,padding:"7px",borderRadius:8,background:"#059669",color:"#fff",textAlign:"center",fontSize:11,fontWeight:700,textDecoration:"none",display:"block"}}>📞 {lang==="en"?"Call":"Hubungi"}</a>}
+                  <a href={`https://maps.google.com/maps/dir/?api=1&destination=${c.maps}`} target="_blank" rel="noopener"
+                    style={{flex:c.tel?2:1,padding:"7px",borderRadius:8,background:"#0284c7",color:"#fff",textAlign:"center",fontSize:11,fontWeight:700,textDecoration:"none",display:"block"}}>
+                    🧭 {lang==="en"?"Directions":"Arah"}
+                  </a>
+                </div>
+              )}
+            </div>
+          );
+
+          return (
+            <div style={{background:"linear-gradient(135deg,#eff6ff,#dbeafe)",border:"1.5px solid #93c5fd",borderRadius:14,padding:"14px",marginBottom:9}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                <p style={{fontWeight:800,fontSize:13,color:"#1e3a5f",margin:0}}>
+                  📍 {lang==="en"?"Nearby Healthcare Options":"Pilihan Penjagaan Kesihatan Berdekatan"}
+                </p>
+                <span style={{background:"#1e3a5f",color:"#fff",fontSize:9,fontWeight:700,padding:"3px 9px",borderRadius:99}}>
+                  {fmtTime(now)}
+                </span>
+              </div>
+
+              {/* Open now section */}
+              {sorted.length > 0 && (
+                <>
+                  <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:8}}>
+                    <div style={{flex:1,height:1,background:"#bfdbfe"}}/>
+                    <span style={{fontSize:10,color:"#1d4ed8",fontWeight:700}}>
+                      🟢 {lang==="en"?"OPEN NOW":"BUKA SEKARANG"} ({sorted.length})
+                    </span>
+                    <div style={{flex:1,height:1,background:"#bfdbfe"}}/>
+                  </div>
+                  {sorted.map(c=><ClinicCard key={c.id} c={c} open={true}/>)}
+                </>
+              )}
+
+              {/* Closed section - collapsed */}
+              {closedNow.length > 0 && (
+                <>
+                  <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:8,marginTop:4}}>
+                    <div style={{flex:1,height:1,background:"#e2e8f0"}}/>
+                    <span style={{fontSize:10,color:"#94a3b8",fontWeight:700}}>
+                      🔴 {lang==="en"?"CURRENTLY CLOSED":"TUTUP SEKARANG"} ({closedNow.length})
+                    </span>
+                    <div style={{flex:1,height:1,background:"#e2e8f0"}}/>
+                  </div>
+                  {closedNow.map(c=><ClinicCard key={c.id} c={c} open={false}/>)}
+                </>
+              )}
+
+              <p style={{fontSize:10,color:"#64748b",textAlign:"center",marginTop:6,marginBottom:0}}>
+                {lang==="en"
+                  ?"Opening status based on current time. Verify before visiting."
+                  :"Status berdasarkan masa semasa. Sahkan sebelum pergi."}
+              </p>
+            </div>
+          );
+        })()}
         <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:"9px 13px",marginBottom:13}}>
           <p style={{color:"#166534",fontSize:11,margin:0}}>📊 {t.analytic}</p>
           <p style={{color:"#059669",fontSize:10,margin:"4px 0 0"}}>☁️ {lang==="en"?"Syncing to Google Sheets...":"Menyegerak ke Google Sheets..."}</p>
